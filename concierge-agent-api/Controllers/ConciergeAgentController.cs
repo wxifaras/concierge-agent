@@ -1,5 +1,6 @@
 using Asp.Versioning;
 using concierge_agent_api.Models;
+using concierge_agent_api.Services;
 using Microsoft.AspNetCore.Mvc;
 using System.Net.Mime;
 
@@ -11,10 +12,14 @@ namespace concierge_agent_api.Controllers
     public class ConciergeAgentController : ControllerBase
     {
         private readonly ILogger<ConciergeAgentController> _logger;
+        private readonly IAzureDatabricksService _azureDatabricksService;
 
-        public ConciergeAgentController(ILogger<ConciergeAgentController> logger)
+        public ConciergeAgentController(
+            ILogger<ConciergeAgentController> logger,
+            IAzureDatabricksService azureDatabricksService)
         {
             _logger = logger;
+            _azureDatabricksService = azureDatabricksService;
         }
 
         [MapToApiVersion("1.0")]

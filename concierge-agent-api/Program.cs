@@ -1,4 +1,6 @@
 using Asp.Versioning;
+using concierge_agent_api.Models;
+using concierge_agent_api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,9 +29,23 @@ builder.Services.AddApiVersioning(options =>
                 options.SubstituteApiVersionInUrl = true;
             });
 
+builder.Services.AddOptions<AzureOpenAiOptions>()
+           .Bind(builder.Configuration.GetSection(AzureOpenAiOptions.AzureOpenAI))
+           .ValidateDataAnnotations();
+
+builder.Services.AddOptions<CosmosDbOptions>()
+           .Bind(builder.Configuration.GetSection(CosmosDbOptions.CosmosDb))
+           .ValidateDataAnnotations();
+
+builder.Services.AddOptions<DatabricksOptions>()
+           .Bind(builder.Configuration.GetSection(DatabricksOptions.AzureDatabricks))
+           .ValidateDataAnnotations();
+
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
+builder.Services.AddSingleton<IAzureDatabricksService, AzureDatabricksService>();
+builder.Services.AddSingleton<ICosmosDbService, CosmosDbService>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
