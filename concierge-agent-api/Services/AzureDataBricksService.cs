@@ -1,10 +1,10 @@
 ﻿namespace concierge_agent_api.Services
 {
-    public interface IAzureDataBricksService
+    public interface IAzureDatabricksService
     {
     }
 
-    public class AzureDataBricksService : IAzureDataBricksService
+    public class AzureDatabricksService : IAzureDatabricksService
     {
     }
 }
