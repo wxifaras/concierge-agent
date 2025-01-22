@@ -8,7 +8,8 @@ namespace concierge_agent_api.Services
 {
     public interface IAzureDatabricksService
     {
-        Task<Customer> GetCustomerAsync(string emailAddress);
+        Task<Customer> GetCustomerByEmailAsync(string emailAddress);
+        Task<Customer> GetCustomerBySmsNumberAsync(string smsNumber);
         Task<DimEventMaster> GetEventMasterAsync(string eventId);
         Task<LotLocation> GetLotLocationAsync(bool isLot);
         Task<LotLookup> GetLotLookupAsync(string actualLot);
@@ -36,9 +37,17 @@ namespace concierge_agent_api.Services
             _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _databricksToken);
         }
 
-        public async Task<Customer> GetCustomerAsync(string emailAddress)
+        public async Task<Customer> GetCustomerByEmailAsync(string emailAddress)
         {
             var query = $"SELECT STRUCT(*) FROM ambse_prod_gold_catalog.ambse.customer WHERE TMEmail = '{emailAddress}'";
+            var jsonString = await GetAsync(query);
+            var customer = JsonConvert.DeserializeObject<Customer>(jsonString);
+            return customer;
+        }
+
+        public async Task<Customer> GetCustomerBySmsNumberAsync(string smsNumber)
+        {
+            var query = $"SELECT STRUCT(*) FROM ambse_prod_gold_catalog.ambse.customer WHERE EpsilonSMSNumber = '{smsNumber}'";
             var jsonString = await GetAsync(query);
             var customer = JsonConvert.DeserializeObject<Customer>(jsonString);
             return customer;

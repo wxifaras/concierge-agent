@@ -32,7 +32,13 @@ namespace concierge_agent_api.Controllers
         {
             try
             {
+                if (ModelState.IsValid == false)
+                {
+                    return BadRequest(ModelState);
+                }
 
+                var customer = await _azureDatabricksService.GetCustomerByEmailAsync(request.TMEmail);
+                var eventMaster = await _azureDatabricksService.GetEventMasterAsync(request.TMEventId);
                 return Ok();
             }
             catch (Exception ex)
