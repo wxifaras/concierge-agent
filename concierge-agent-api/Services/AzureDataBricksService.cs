@@ -1,5 +1,6 @@
 ﻿using concierge_agent_api.Models;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Net.Http.Headers;
 
@@ -9,6 +10,7 @@ namespace concierge_agent_api.Services
     {
         Task<string> GetAsync(string query);
         Task<string> DescribeTableAsync(string tableName);
+        Task<Customer> GetCustomerAsync(string emailAddress);
     }
 
     public class AzureDatabricksService : IAzureDatabricksService
@@ -36,7 +38,6 @@ namespace concierge_agent_api.Services
         public async Task<string> GetAsync(string query)
         {
             var content = new StringContent($"{{\"warehouse_id\":\"{_warehouseId}\",\"statement\":\"{query}\",\"wait_timeout\":\"0s\"}}", System.Text.Encoding.UTF8, "application/json");
-
             var response = await _client.PostAsync("/api/2.0/sql/statements", content);
 
             if (response.IsSuccessStatusCode)
@@ -63,6 +64,14 @@ namespace concierge_agent_api.Services
             return result;
         }
 
+        public async Task<Customer> GetCustomerAsync(string emailAddress)
+        {
+            var query = $"SELECT STRUCT(*) FROM ambse_prod_gold_catalog.ambse.customer WHERE TMEmail = '{emailAddress}'";
+            var jsonString = await GetAsync(query);
+            var customer = JsonConvert.DeserializeObject<Customer>(jsonString);
+            return customer;
+        }
+
         private static async Task<string> PollQueryStatusAsync(string statementId)
         {
             while (true)
@@ -73,11 +82,12 @@ namespace concierge_agent_api.Services
                 {
                     var statusResult = await statusResponse.Content.ReadAsStringAsync();
                     var statusJson = JObject.Parse(statusResult);
+                    JArray dataArray = (JArray)statusJson["result"]["data_array"];
                     var state = statusJson["status"]["state"].ToString();
 
                     if (state == "SUCCEEDED")
                     {
-                        return statusJson["result"].ToString();
+                        return dataArray[0][0].ToString().ToString();
                     }
                     else if (state == "FAILED")
                     {
