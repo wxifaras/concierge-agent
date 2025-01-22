@@ -41,6 +41,10 @@ builder.Services.AddOptions<DatabricksOptions>()
            .Bind(builder.Configuration.GetSection(DatabricksOptions.AzureDatabricks))
            .ValidateDataAnnotations();
 
+builder.Services.AddOptions<AzureStorageOptions>()
+           .Bind(builder.Configuration.GetSection(AzureStorageOptions.AzureStorage))
+           .ValidateDataAnnotations();
+
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
