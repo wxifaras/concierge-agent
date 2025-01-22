@@ -8,9 +8,10 @@ namespace concierge_agent_api.Services
 {
     public interface IAzureDatabricksService
     {
-        Task<string> GetAsync(string query);
-        Task<string> DescribeTableAsync(string tableName);
         Task<Customer> GetCustomerAsync(string emailAddress);
+        Task<DimEventMaster> GetEventMasterAsync(string eventId);
+        Task<LotLocation> GetLotLocationAsync(bool isLot);
+        Task<LotLookup> GetLotLookupAsync(string actualLot);
     }
 
     public class AzureDatabricksService : IAzureDatabricksService
@@ -35,7 +36,54 @@ namespace concierge_agent_api.Services
             _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _databricksToken);
         }
 
-        public async Task<string> GetAsync(string query)
+        public async Task<Customer> GetCustomerAsync(string emailAddress)
+        {
+            var query = $"SELECT STRUCT(*) FROM ambse_prod_gold_catalog.ambse.customer WHERE TMEmail = '{emailAddress}'";
+            var jsonString = await GetAsync(query);
+            var customer = JsonConvert.DeserializeObject<Customer>(jsonString);
+            return customer;
+        }
+
+        public async Task<DimEventMaster> GetEventMasterAsync(string eventId)
+        {
+            var query = $"SELECT STRUCT(*) FROM ambse_prod_silver_catalog.event.dimeventmaster WHERE TMEventId = '{eventId}'";
+            var jsonString = await GetAsync(query);
+            var eventMaster = JsonConvert.DeserializeObject<DimEventMaster>(jsonString);
+            return eventMaster;
+        }
+
+        public async Task<LotLocation> GetLotLocationAsync(bool isLot)
+        {
+            var locationType = isLot ? "Lot" : "Gate";
+
+            var query = $"SELECT STRUCT(*) FROM select * from ambse_prod_gold_catalog.parking.lot_location WHERE locationType = '{locationType}'";
+            var jsonString = await GetAsync(query);
+            var lotLocation = JsonConvert.DeserializeObject<LotLocation>(jsonString);
+            return lotLocation;
+        }
+
+        public async Task<LotLookup> GetLotLookupAsync(string actualLot)
+        {
+            var query = $"SELECT STRUCT(*) FROM select * from ambse_prod_gold_catalog.parking.lot_lookup WHERE actual_lot = '{actualLot}'";
+            var jsonString = await GetAsync(query);
+            var lotLookup = JsonConvert.DeserializeObject<LotLookup>(jsonString);
+            return lotLookup;
+        }
+
+        /// <summary>
+        /// Get Attendance Report for a customer
+        /// </summary>
+        /// <param name="tmAcctId">TMAcctId</param>
+        /// <returns></returns>
+        public async Task<AttendanceReport> GetAttendanceReportAsync(string tmAcctId)
+        {
+            var query = $"SELECT STRUCT(*) FROM ambse_prod_gold_catalog.tm.attendance_report WHERE acct_id = '{tmAcctId}'";
+            var jsonString = await GetAsync(query);
+            var attendanceReport = JsonConvert.DeserializeObject<AttendanceReport>(jsonString);
+            return attendanceReport;
+        }
+
+        private async Task<string> GetAsync(string query)
         {
             var content = new StringContent($"{{\"warehouse_id\":\"{_warehouseId}\",\"statement\":\"{query}\",\"wait_timeout\":\"0s\"}}", System.Text.Encoding.UTF8, "application/json");
             var response = await _client.PostAsync("/api/2.0/sql/statements", content);
@@ -55,21 +103,6 @@ namespace concierge_agent_api.Services
             {
                 throw new Exception($"Error querying table: {response.ReasonPhrase}");
             }
-        }
-        
-        public async Task<string> DescribeTableAsync(string tableName)
-        {
-            var query = $"DESCRIBE TABLE {tableName}";
-            var result = await GetAsync(query);
-            return result;
-        }
-
-        public async Task<Customer> GetCustomerAsync(string emailAddress)
-        {
-            var query = $"SELECT STRUCT(*) FROM ambse_prod_gold_catalog.ambse.customer WHERE TMEmail = '{emailAddress}'";
-            var jsonString = await GetAsync(query);
-            var customer = JsonConvert.DeserializeObject<Customer>(jsonString);
-            return customer;
         }
 
         private static async Task<string> PollQueryStatusAsync(string statementId)
