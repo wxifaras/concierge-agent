@@ -1,6 +1,6 @@
 ﻿namespace concierge_agent_api.Models
 {
-    public class CreateTicketRequest
+    public class EventWorkflowRequest
     {
     }
 }

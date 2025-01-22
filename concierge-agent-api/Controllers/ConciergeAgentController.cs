@@ -28,7 +28,7 @@ namespace concierge_agent_api.Controllers
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> CreateTicket([FromBody] CreateTicketRequest request)
+        public async Task<IActionResult> InitiateEventWorkflow([FromBody] CreateTicketRequest request)
         {
             try
             {
