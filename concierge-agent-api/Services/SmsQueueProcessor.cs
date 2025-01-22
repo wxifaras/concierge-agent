@@ -6,7 +6,6 @@ using concierge_agent_api.Models;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json.Linq;
 using System.Text;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -80,5 +79,4 @@ public class SmsQueueProcessor : BackgroundService
             }
         }
     }
-
 }
