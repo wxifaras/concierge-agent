@@ -11,8 +11,9 @@ namespace concierge_agent_api.Services
         Task<Customer> GetCustomerByEmailAsync(string emailAddress);
         Task<Customer> GetCustomerBySmsNumberAsync(string smsNumber);
         Task<DimEventMaster> GetEventMasterAsync(string eventId);
-        Task<LotLocation> GetLotLocationAsync(bool isLot);
+        Task<LotLocation> GetLotLocationsAsync(bool isLot);
         Task<LotLookup> GetLotLookupAsync(string actualLot);
+        Task<Section> GetSectionAsync(string sectionId);
     }
 
     public class AzureDatabricksService : IAzureDatabricksService
@@ -61,7 +62,7 @@ namespace concierge_agent_api.Services
             return eventMaster;
         }
 
-        public async Task<LotLocation> GetLotLocationAsync(bool isLot)
+        public async Task<LotLocation> GetLotLocationsAsync(bool isLot)
         {
             var locationType = isLot ? "Lot" : "Gate";
 
@@ -90,6 +91,14 @@ namespace concierge_agent_api.Services
             var jsonString = await GetAsync(query);
             var attendanceReport = JsonConvert.DeserializeObject<AttendanceReport>(jsonString);
             return attendanceReport;
+        }
+
+        public async Task<Section> GetSectionAsync(string sectionId)
+        {
+            var query = $"SELECT STRUCT(*) FROM ambse_prod_silver_catalog.stadium.section WHERE SectionId = '{sectionId}'";
+            var jsonString = await GetAsync(query);
+            var section = JsonConvert.DeserializeObject<Section>(jsonString);
+            return section;
         }
 
         private async Task<string> GetAsync(string query)
