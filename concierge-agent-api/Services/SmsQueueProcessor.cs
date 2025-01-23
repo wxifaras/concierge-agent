@@ -80,7 +80,6 @@ public class SmsQueueProcessor : BackgroundService
                         await _queueClient.DeleteMessageAsync(queueMessage.MessageId, queueMessage.PopReceipt);
 
                         await ProcessMessageAsync(fromSmsNumber, message);
-
                     }
                     catch (Exception messageProcessingException)
                     {

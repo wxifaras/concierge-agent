@@ -150,7 +150,23 @@ public class AzureDatabricksService : IAzureDatabricksService
                 if (state == "SUCCEEDED")
                 {
                     JArray dataArray = (JArray)statusJson["result"]["data_array"];
-                    return dataArray[0][0].ToString().ToString();
+
+                    // Check if there is only one row, and if so, return it directly
+                    if (dataArray.Count == 1)
+                    {
+                        var parsedRow = JObject.Parse(dataArray[0][0].ToString()); // Parse the stringified JSON object
+                        return parsedRow.ToString();
+                    }
+
+                    // If there are multiple rows, parse them and return as an array
+                    JArray allData = new JArray();
+                    foreach (var row in dataArray)
+                    {
+                        var parsedRow = JObject.Parse(row[0].ToString()); // Parse the stringified JSON object
+                        allData.Add(parsedRow);
+                    }
+
+                    return allData.ToString();
                 }
                 else if (state == "FAILED")
                 {
