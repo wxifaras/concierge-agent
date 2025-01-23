@@ -2,6 +2,8 @@ using Asp.Versioning;
 using concierge_agent_api.Models;
 using concierge_agent_api.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.SemanticKernel.ChatCompletion;
+using Microsoft.SemanticKernel;
 using System.Net.Mime;
 
 namespace concierge_agent_api.Controllers;
@@ -13,11 +15,20 @@ public class ConciergeAgentController : ControllerBase
 {
     private readonly ILogger<ConciergeAgentController> _logger;
     private readonly IAzureDatabricksService _azureDatabricksService;
+    private readonly Kernel _kernel;
+    private readonly IChatCompletionService _chat;
+    private readonly IChatHistoryManager _chatHistoryManager;
 
     public ConciergeAgentController(
         ILogger<ConciergeAgentController> logger,
-        IAzureDatabricksService azureDatabricksService)
+        IAzureDatabricksService azureDatabricksService,
+        Kernel kernel,
+        IChatCompletionService chat,
+        IChatHistoryManager chathistorymanager)
     {
+        _kernel = kernel;
+        _chat = chat;
+        _chatHistoryManager = chathistorymanager;
         _logger = logger;
         _azureDatabricksService = azureDatabricksService;
     }
