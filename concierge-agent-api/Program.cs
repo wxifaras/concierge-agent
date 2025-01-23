@@ -1,6 +1,11 @@
 using Asp.Versioning;
 using concierge_agent_api.Models;
 using concierge_agent_api.Services;
+using Microsoft.Extensions.Options;
+using Microsoft.SemanticKernel.ChatCompletion;
+using Microsoft.SemanticKernel;
+using concierge_agent_api.Plugins;
+using concierge_agent_api.Prompts;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -44,6 +49,36 @@ builder.Services.AddOptions<AzureStorageOptions>()
            .Bind(builder.Configuration.GetSection(AzureStorageOptions.AzureStorage))
            .ValidateDataAnnotations();
 
+// Build the service provider
+var serviceProvider = builder.Services.BuildServiceProvider();
+
+var kernelOptions = serviceProvider.GetRequiredService<IOptions<AzureOpenAiOptions>>().Value;
+var databricksOptions = serviceProvider.GetRequiredService<IOptions<DatabricksOptions>>();
+IAzureDatabricksService azureDatabricksService = new AzureDatabricksService(databricksOptions);
+
+builder.Services.AddTransient<Kernel>(s =>
+{
+    var builder = Kernel.CreateBuilder();
+    builder.AddAzureOpenAIChatCompletion(kernelOptions.DeploymentName, kernelOptions.EndPoint, kernelOptions.ApiKey);
+    var directionsPluginLogger = s.GetRequiredService<ILogger<DirectionsPlugin>>();
+    var directionsPlugin = new DirectionsPlugin(directionsPluginLogger, azureDatabricksService);
+    builder.Plugins.AddFromObject(directionsPlugin, "DirectionsPlugin");
+
+    var parkingPluginLogger = s.GetRequiredService<ILogger<ParkingPlugin>>();
+    var parkingPlugin = new ParkingPlugin(directionsPluginLogger, azureDatabricksService);
+    builder.Plugins.AddFromObject(parkingPlugin, "ParkingPlugin");
+    return builder.Build();
+});
+
+builder.Services.AddSingleton<IChatCompletionService>(sp =>
+         sp.GetRequiredService<Kernel>().GetRequiredService<IChatCompletionService>());
+
+builder.Services.AddSingleton<IChatHistoryManager>(sp =>
+{
+    var sysPrompt = CorePrompts.GetSystemPrompt();
+    return new ChatHistoryManager(sysPrompt);
+});
+
 builder.Services.AddHostedService<SmsQueueProcessor>();
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -65,9 +100,6 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
 app.UseAuthorization();
-
 app.MapControllers();
-
 app.Run();
