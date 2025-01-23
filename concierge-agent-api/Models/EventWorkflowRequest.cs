@@ -8,6 +8,9 @@ public class EventWorkflowRequest
     public string TMEmail { get; set; }
 
     [Required]
+    public string SmsNumber { get; set; }
+
+    [Required]
     public long TMAcctId { get; set; }
 
     [Required]
