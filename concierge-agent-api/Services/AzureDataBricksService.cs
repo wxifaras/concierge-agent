@@ -144,7 +144,6 @@ public class AzureDatabricksService : IAzureDatabricksService
             {
                 var statusResult = await statusResponse.Content.ReadAsStringAsync();
                 var statusJson = JObject.Parse(statusResult);
-
                 var state = statusJson["status"]["state"].ToString();
 
                 if (state == "SUCCEEDED")
@@ -154,7 +153,7 @@ public class AzureDatabricksService : IAzureDatabricksService
                     // Check if there is only one row, and if so, return it directly
                     if (dataArray.Count == 1)
                     {
-                        var parsedRow = JObject.Parse(dataArray[0][0].ToString()); // Parse the stringified JSON object
+                        var parsedRow = JObject.Parse(dataArray[0][0].ToString());
                         return parsedRow.ToString();
                     }
 
@@ -162,7 +161,7 @@ public class AzureDatabricksService : IAzureDatabricksService
                     JArray allData = new JArray();
                     foreach (var row in dataArray)
                     {
-                        var parsedRow = JObject.Parse(row[0].ToString()); // Parse the stringified JSON object
+                        var parsedRow = JObject.Parse(row[0].ToString());
                         allData.Add(parsedRow);
                     }
 
