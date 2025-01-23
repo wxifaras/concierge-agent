@@ -31,13 +31,13 @@ public class DirectionsPlugin
 
     [KernelFunction("get_closest_parking_recommendations")]
     [Description("Returns the top three closest parking recommendations")]
-    public async Task<LotLocation> GetParkingRecommendations(
+    public async Task<List<LotLocation>> GetParkingRecommendations(
         [Description("The origin of where the customer will be driving from to the stadium")] string origin,
         [Description("The address of the origin")] string address
         )
     {
-        LotLocation lotLocation = await _azureDatabricksService.GetLotLocationsAsync(true);
-        return lotLocation;
+        List<LotLocation> lotLocations = await _azureDatabricksService.GetLotLocationsAsync(true);
+        return lotLocations;
         //return $"Getting parking recommendations";
     }
 }

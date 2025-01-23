@@ -12,7 +12,7 @@ public interface IAzureDatabricksService
     Task<Customer> GetCustomerByEmailAsync(string emailAddress);
     Task<Customer> GetCustomerBySmsNumberAsync(string smsNumber);
     Task<DimEventMaster> GetEventMasterAsync(string eventId);
-    Task<LotLocation> GetLotLocationsAsync(bool isLot);
+    Task<List<LotLocation>> GetLotLocationsAsync(bool isLot);
     Task<LotLookup> GetLotLookupAsync(string actualLot);
     Task<Section> GetSectionAsync(string sectionId);
     Task<FutureTicket> GetFutureTicketAsync(string email, string tmEventId);
@@ -64,14 +64,14 @@ public class AzureDatabricksService : IAzureDatabricksService
         return eventMaster;
     }
 
-    public async Task<LotLocation> GetLotLocationsAsync(bool isLot)
+    public async Task<List<LotLocation>> GetLotLocationsAsync(bool isLot)
     {
         var locationType = isLot ? "Lot" : "Gate";
 
-        var query = $"SELECT STRUCT(*) FROM ambse_prod_gold_catalog.parking.lot_location WHERE locationType = '{locationType}'";
+        var query = $"SELECT * FROM ambse_prod_gold_catalog.parking.lot_location WHERE locationType = '{locationType}'";
         var jsonString = await GetAsync(query);
-        var lotLocation = JsonConvert.DeserializeObject<LotLocation>(jsonString);
-        return lotLocation;
+        var lotLocations = JsonConvert.DeserializeObject<List<LotLocation>>(jsonString);
+        return lotLocations;
     }
 
     public async Task<LotLookup> GetLotLookupAsync(string actualLot)

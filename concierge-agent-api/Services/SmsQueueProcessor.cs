@@ -79,7 +79,7 @@ public class SmsQueueProcessor : BackgroundService
                         // Delete the message after successful processing
                         await _queueClient.DeleteMessageAsync(queueMessage.MessageId, queueMessage.PopReceipt);
 
-                        ProcessMessageAsync(fromSmsNumber, message).ConfigureAwait(false);
+                        await ProcessMessageAsync(fromSmsNumber, message);
 
                     }
                     catch (Exception messageProcessingException)

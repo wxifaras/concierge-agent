@@ -59,6 +59,8 @@ public class ConciergeAgentController : ControllerBase
             string initialMessage = $"Hello {customer.FirstName}, We're excited to see you at the Falcons vs {eventMaster.OpponentName} game on {eventMaster.EventDate}. Are you planning to drive, rideshare, or take public transit?";
             chatHistory.AddSystemMessage(initialMessage);
 
+            _logger.LogInformation(initialMessage);
+
             return Ok();
         }
         catch (Exception ex)

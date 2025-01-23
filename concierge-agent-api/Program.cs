@@ -64,9 +64,6 @@ builder.Services.AddTransient<Kernel>(s =>
     var directionsPlugin = new DirectionsPlugin(directionsPluginLogger, azureDatabricksService);
     builder.Plugins.AddFromObject(directionsPlugin, "DirectionsPlugin");
 
-    var parkingPluginLogger = s.GetRequiredService<ILogger<ParkingPlugin>>();
-    var parkingPlugin = new ParkingPlugin(directionsPluginLogger, azureDatabricksService);
-    builder.Plugins.AddFromObject(parkingPlugin, "ParkingPlugin");
     return builder.Build();
 });
 
