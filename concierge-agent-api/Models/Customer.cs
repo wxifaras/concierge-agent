@@ -13,6 +13,7 @@ public class Customer
     public string TMCellPhone { get; set; }
     public string TMMAPhone { get; set; }
     public string EpsilonSMSNumber { get; set; }
+    public string PreferredSmsNumber { get; set; }
     public string hasBioPhoto { get; set; }
     public string bioWebOnboarded { get; set; }
     public string bioAppOnboarded { get; set; }
