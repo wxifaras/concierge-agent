@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Net.Http.Headers;
+using Section = concierge_agent_api.Models.Section;
 
 namespace concierge_agent_api.Services
 {
@@ -14,6 +15,7 @@ namespace concierge_agent_api.Services
         Task<LotLocation> GetLotLocationsAsync(bool isLot);
         Task<LotLookup> GetLotLookupAsync(string actualLot);
         Task<Section> GetSectionAsync(string sectionId);
+        Task<FutureTicket> GetFutureTicketAsync(string email, string tmEventId);
     }
 
     public class AzureDatabricksService : IAzureDatabricksService
@@ -99,6 +101,14 @@ namespace concierge_agent_api.Services
             var jsonString = await GetAsync(query);
             var section = JsonConvert.DeserializeObject<Section>(jsonString);
             return section;
+        }
+
+        public async Task<FutureTicket> GetFutureTicketAsync(string email, string tmEventId)
+        {
+            var query = $"SELECT STRUCT(*) FROM ambse_prod_silver_catalog.ticket.futureticket WHERE emailaddress = '{email}' AND TMEventId = '{tmEventId}'";
+            var jsonString = await GetAsync(query);
+            var futureTicket = JsonConvert.DeserializeObject<FutureTicket>(jsonString);
+            return futureTicket;
         }
 
         private async Task<string> GetAsync(string query)
