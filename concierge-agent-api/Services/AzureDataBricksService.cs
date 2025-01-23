@@ -76,7 +76,7 @@ public class AzureDatabricksService : IAzureDatabricksService
 
     public async Task<LotLookup> GetLotLookupAsync(string actualLot)
     {
-        var query = $"SELECT STRUCT(*) FROM select * from ambse_prod_gold_catalog.parking.lot_lookup WHERE actual_lot = '{actualLot}'";
+        var query = $"SELECT STRUCT(*) ambse_prod_gold_catalog.parking.lot_lookup WHERE actual_lot = '{actualLot}'";
         var jsonString = await GetAsync(query);
         var lotLookup = JsonConvert.DeserializeObject<LotLookup>(jsonString);
         return lotLookup;
