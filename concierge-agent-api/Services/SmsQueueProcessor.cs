@@ -56,7 +56,7 @@ public class SmsQueueProcessor : BackgroundService
                     try
                     {
                         // "Process" the message
-                        _logger.LogInformation($"Message: {queueMessage.MessageText}");
+                        //_logger.LogInformation($"Message: {queueMessage.MessageText}");
 
                         //byte[] data = Convert.FromBase64String(queueMessage.MessageText);
                         //string json = Encoding.UTF8.GetString(data);

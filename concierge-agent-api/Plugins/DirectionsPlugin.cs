@@ -1,7 +1,10 @@
 ﻿using concierge_agent_api.Models;
 using concierge_agent_api.Services;
 using Microsoft.SemanticKernel;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System.ComponentModel;
+using System.Net;
 
 namespace concierge_agent_api.Plugins;
 
@@ -9,35 +12,71 @@ public class DirectionsPlugin
 {
     private readonly ILogger<DirectionsPlugin> _logger;
     private readonly IAzureDatabricksService _azureDatabricksService;
+    private readonly IAzureMapsService _azureMapsService;
 
     public DirectionsPlugin(
         ILogger<DirectionsPlugin> logger,
-        IAzureDatabricksService azureDatabricksService)
+        IAzureDatabricksService azureDatabricksService,
+        IAzureMapsService azureMapsService)
     {
         _logger = logger;
         _azureDatabricksService = azureDatabricksService;
+        _azureMapsService = azureMapsService;
     }
 
     [KernelFunction("get_distance_to_stadium")]
     [Description("Calculates the distance from the customer's origin to Mercedes-Benz Stadium")]
-    public string GetDistanceToStadium(
+    public async Task<string> GetDistanceToStadium(
         [Description("The origin of where the customer will be driving from to the stadium")] string origin,
-        [Description("The address of the origin")] string address
+        [Description("The address of the origin")] string originAddress,
+        [Description("The latitude of the origin")] string originLatitude,
+        [Description("The longitude of the origin")] string originLongitude,
+        [Description("The address of Mercedes-Benz Stadium")] string destinationAddress,
+        [Description("The latitude of Mercedes-Benz Stadium")] string destinationLatitude,
+        [Description("The longitude of Mercedes-Benz Stadium")] string destinationLongitude
         )
     {
-        // TODO: use mapping service to calculate distance and return results
-        return $"Directions to stadium from {origin} ({address}) are as follows...";
+        //return $"Directions to stadium from {origin} ({originAddress}) are as follows...";
+        string directions = await _azureMapsService.GetDirectionsAsync(Double.Parse(originLatitude), Double.Parse(originLongitude), Double.Parse(destinationLatitude), Double.Parse(destinationLongitude));
+
+        return directions;
     }
 
-    [KernelFunction("get_closest_parking_recommendations")]
-    [Description("Returns the top three closest parking recommendations")]
-    public async Task<List<LotLocation>> GetParkingRecommendations(
-        [Description("The origin of where the customer will be driving from to the stadium")] string origin,
-        [Description("The address of the origin")] string address
+    [KernelFunction("get_parking_options")]
+    [Description("Returns the parking options to include the distance of each option to the Mercedes-Benz Stadium.")]
+    public async Task<string> GetParkingOptions(
+        [Description("The address of Mercedes-Benz Stadium")] string destinationAddress,
+        [Description("The latitude of Mercedes-Benz Stadium")] string destinationLatitude,
+        [Description("The longitude of Mercedes-Benz Stadium")] string destinationLongitude/*,
+        [Description("Whether the customer is open to a short walk or not")] bool isOpenToShortWalk*/
         )
     {
         List<LotLocation> lotLocations = await _azureDatabricksService.GetLotLocationsAsync(true);
-        return lotLocations;
-        //return $"Getting parking recommendations";
+
+        // TODO IF NEEDED: pull from the cache each lot location with the corresponding calculated the distance to the stadium and add to a json structure we can return so the LLM can decide,
+        List<JObject> jsonObjectsList = new List<JObject>();
+
+        // based on whether the customer is open to a short walk or not, which parking recommendations to provide
+        foreach (LotLocation lotLocation in lotLocations)
+        {
+            string directionSummary = await _azureMapsService.GetDirectionsAsync(lotLocation.lat, lotLocation.longitude, Double.Parse(destinationLatitude), Double.Parse(destinationLongitude));
+
+            string distanceToStadium = JObject.Parse(directionSummary)["lengthInMeters"].ToString();
+
+            var jsonObject = new JObject
+            {
+                { "lot_lat", lotLocation.lat },
+                { "lot_long", lotLocation.longitude },
+                { "actual_lot", lotLocation.actual_lot },
+                { "location_type", lotLocation.locationType },
+                { "distance_to_stadium_in_meters",  distanceToStadium }
+            };
+
+            jsonObjectsList.Add(jsonObject);
+        }
+
+        string jsonString = JsonConvert.SerializeObject(jsonObjectsList);
+
+        return jsonString;
     }
 }
