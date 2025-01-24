@@ -25,6 +25,8 @@ public class AzureDatabricksService : IAzureDatabricksService
     private readonly string _databricksToken;
     private readonly string _warehouseId;
 
+    private const string BASE_CUSTOMER_QUERY = "SELECT STRUCT(TMEmail, FirstName, LastName, TMAcctId, EpsilonCustomerKey, WicketId, ConstellationId, AifiCustomerId, CASE WHEN EpsilonSMSNumber IS NOT NULL AND EpsilonSMSNumber != 'null' THEN EpsilonSMSNumber WHEN TMCellPhone IS NOT NULL AND TMCellPhone != 'null' THEN TMCellPhone WHEN TMMAPhone IS NOT NULL AND TMMAPhone != 'null' THEN TMMAPhone ELSE NULL END AS PreferredPhoneNumber, hasBioPhoto, bioWebOnboarded, bioAppOnboarded, bioDateJoined, bioLastUpdated, geniusCheckoutStoredCards, storedCards, signUpMethod, CurrentFalconsSTM, CurrentUnitedSTM, emailOptIn_AF, emailOptIn_AU, emailOptIn_MBS, smsFalconsOptInFlag, smsUniteOptInFlag, smsMBSOptInFlag) FROM ambse_prod_gold_catalog.ambse.customer";
+
     static AzureDatabricksService()
     {
         _client = new HttpClient();
@@ -42,7 +44,7 @@ public class AzureDatabricksService : IAzureDatabricksService
 
     public async Task<Customer> GetCustomerByEmailAsync(string emailAddress)
     {
-        var query = $"SELECT STRUCT(TMEmail, FirstName, LastName, TMAcctId, EpsilonCustomerKey, WicketId, ConstellationId, AifiCustomerId, CASE WHEN EpsilonSMSNumber IS NOT NULL AND EpsilonSMSNumber != 'null' THEN EpsilonSMSNumber WHEN TMCellPhone IS NOT NULL AND TMCellPhone != 'null' THEN TMCellPhone WHEN TMMAPhone IS NOT NULL AND TMMAPhone != 'null' THEN TMMAPhone ELSE NULL END AS PreferredPhoneNumber, hasBioPhoto, bioWebOnboarded, bioAppOnboarded, bioDateJoined, bioLastUpdated, geniusCheckoutStoredCards, storedCards, signUpMethod, CurrentFalconsSTM, CurrentUnitedSTM, emailOptIn_AF, emailOptIn_AU, emailOptIn_MBS, smsFalconsOptInFlag, smsUniteOptInFlag, smsMBSOptInFlag) FROM ambse_prod_gold_catalog.ambse.customer WHERE TMEmail = '{emailAddress}'";
+        var query = $"{BASE_CUSTOMER_QUERY} WHERE TMEmail = '{emailAddress}'";
         var jsonString = await GetAsync(query);
         var customer = JsonConvert.DeserializeObject<Customer>(jsonString);
         return customer;
@@ -50,8 +52,8 @@ public class AzureDatabricksService : IAzureDatabricksService
 
     public async Task<Customer> GetCustomerBySmsNumberAsync(string smsNumber)
     {
-        var query = $"SELECT STRUCT(TMEmail, FirstName, LastName, TMAcctId, EpsilonCustomerKey, WicketId, ConstellationId, AifiCustomerId, CASE WHEN EpsilonSMSNumber IS NOT NULL AND EpsilonSMSNumber != 'null' THEN EpsilonSMSNumber WHEN TMCellPhone IS NOT NULL AND TMCellPhone != 'null' THEN TMCellPhone WHEN TMMAPhone IS NOT NULL AND TMMAPhone != 'null' THEN TMMAPhone ELSE NULL END AS PreferredPhoneNumber, hasBioPhoto, bioWebOnboarded, bioAppOnboarded, bioDateJoined, bioLastUpdated, geniusCheckoutStoredCards, storedCards, signUpMethod, CurrentFalconsSTM, CurrentUnitedSTM, emailOptIn_AF, emailOptIn_AU, emailOptIn_MBS, smsFalconsOptInFlag, smsUniteOptInFlag, smsMBSOptInFlag) FROM ambse_prod_gold_catalog.ambse.customer WHERE EpsilonSMSNumber = '{smsNumber}' OR TMCellPhone = '{smsNumber}' OR TMMAPhone = '{smsNumber}'";
-
+        var query = $"{BASE_CUSTOMER_QUERY} WHERE EpsilonSMSNumber = '{smsNumber}' OR TMCellPhone = '{smsNumber}' OR TMMAPhone = '{smsNumber}'";
+    
         var jsonString = await GetAsync(query);
         var customer = JsonConvert.DeserializeObject<Customer>(jsonString);
         return customer;
