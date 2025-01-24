@@ -53,7 +53,6 @@ public class AzureDatabricksService : IAzureDatabricksService
     public async Task<Customer> GetCustomerBySmsNumberAsync(string smsNumber)
     {
         var query = $"{BASE_CUSTOMER_QUERY} WHERE EpsilonSMSNumber = '{smsNumber}' OR TMCellPhone = '{smsNumber}' OR TMMAPhone = '{smsNumber}'";
-
         var jsonString = await GetAsync(query);
         var customer = JsonConvert.DeserializeObject<Customer>(jsonString);
         return customer;
@@ -146,6 +145,7 @@ public class AzureDatabricksService : IAzureDatabricksService
             {
                 var statusResult = await statusResponse.Content.ReadAsStringAsync();
                 var statusJson = JObject.Parse(statusResult);
+
                 var state = statusJson["status"]["state"].ToString();
 
                 if (state == "SUCCEEDED")
@@ -168,6 +168,7 @@ public class AzureDatabricksService : IAzureDatabricksService
                     }
 
                     return allData.ToString();
+                    return dataArray[0][0].ToString().ToString();
                 }
                 else if (state == "FAILED")
                 {
