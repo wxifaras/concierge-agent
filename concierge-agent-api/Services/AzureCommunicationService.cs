@@ -1,6 +1,5 @@
-﻿namespace concierge_agent_api.Services
+﻿namespace concierge_agent_api.Services;
+
+public class AzureCommunicationService
 {
-    public class AzureCommunicationService
-    {
-    }
 }

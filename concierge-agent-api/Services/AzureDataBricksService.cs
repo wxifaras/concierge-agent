@@ -12,7 +12,7 @@ public interface IAzureDatabricksService
     Task<Customer> GetCustomerByEmailAsync(string emailAddress);
     Task<Customer> GetCustomerBySmsNumberAsync(string smsNumber);
     Task<DimEventMaster> GetEventMasterAsync(string eventId);
-    Task<LotLocation> GetLotLocationsAsync(bool isLot);
+    Task<List<LotLocation>> GetLotLocationsAsync(bool isLot);
     Task<LotLookup> GetLotLookupAsync(string actualLot);
     Task<Section> GetSectionAsync(string sectionId);
     Task<FutureTicket> GetFutureTicketAsync(string email, string tmEventId);
@@ -53,7 +53,6 @@ public class AzureDatabricksService : IAzureDatabricksService
     public async Task<Customer> GetCustomerBySmsNumberAsync(string smsNumber)
     {
         var query = $"{BASE_CUSTOMER_QUERY} WHERE EpsilonSMSNumber = '{smsNumber}' OR TMCellPhone = '{smsNumber}' OR TMMAPhone = '{smsNumber}'";
-    
         var jsonString = await GetAsync(query);
         var customer = JsonConvert.DeserializeObject<Customer>(jsonString);
         return customer;
@@ -67,19 +66,19 @@ public class AzureDatabricksService : IAzureDatabricksService
         return eventMaster;
     }
 
-    public async Task<LotLocation> GetLotLocationsAsync(bool isLot)
+    public async Task<List<LotLocation>> GetLotLocationsAsync(bool isLot)
     {
         var locationType = isLot ? "Lot" : "Gate";
 
-        var query = $"SELECT STRUCT(*) FROM select * from ambse_prod_gold_catalog.parking.lot_location WHERE locationType = '{locationType}'";
+        var query = $"SELECT STRUCT(actual_lot, lat, long, locationType) FROM ambse_prod_gold_catalog.parking.lot_location WHERE locationType = '{locationType}'";
         var jsonString = await GetAsync(query);
-        var lotLocation = JsonConvert.DeserializeObject<LotLocation>(jsonString);
-        return lotLocation;
+        var lotLocations = JsonConvert.DeserializeObject<List<LotLocation>>(jsonString);
+        return lotLocations;
     }
 
     public async Task<LotLookup> GetLotLookupAsync(string actualLot)
     {
-        var query = $"SELECT STRUCT(*) ambse_prod_gold_catalog.parking.lot_lookup WHERE actual_lot = '{actualLot}'";
+        var query = $"SELECT STRUCT(*) FROM ambse_prod_gold_catalog.parking.lot_lookup WHERE actual_lot = '{actualLot}'";
         var jsonString = await GetAsync(query);
         var lotLookup = JsonConvert.DeserializeObject<LotLookup>(jsonString);
         return lotLookup;
@@ -146,12 +145,29 @@ public class AzureDatabricksService : IAzureDatabricksService
             {
                 var statusResult = await statusResponse.Content.ReadAsStringAsync();
                 var statusJson = JObject.Parse(statusResult);
-                
+
                 var state = statusJson["status"]["state"].ToString();
 
                 if (state == "SUCCEEDED")
                 {
                     JArray dataArray = (JArray)statusJson["result"]["data_array"];
+
+                    // Check if there is only one row, and if so, return it directly
+                    if (dataArray.Count == 1)
+                    {
+                        var parsedRow = JObject.Parse(dataArray[0][0].ToString());
+                        return parsedRow.ToString();
+                    }
+
+                    // If there are multiple rows, parse them and return as an array
+                    JArray allData = new JArray();
+                    foreach (var row in dataArray)
+                    {
+                        var parsedRow = JObject.Parse(row[0].ToString());
+                        allData.Add(parsedRow);
+                    }
+
+                    return allData.ToString();
                     return dataArray[0][0].ToString().ToString();
                 }
                 else if (state == "FAILED")

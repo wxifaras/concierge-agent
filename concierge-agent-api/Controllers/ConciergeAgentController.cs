@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel;
 using System.Net.Mime;
+using Newtonsoft.Json.Linq;
+using System.Text.Json;
 
 namespace concierge_agent_api.Controllers;
 
@@ -48,8 +50,21 @@ public class ConciergeAgentController : ControllerBase
                 return BadRequest(ModelState);
             }
 
+            var jsonRequest = JsonSerializer.Serialize(request);
+            _logger.LogInformation($"Initiating event workflow for request: {jsonRequest}");
+
             var customer = await _azureDatabricksService.GetCustomerByEmailAsync(request.TMEmail);
             var eventMaster = await _azureDatabricksService.GetEventMasterAsync(request.TMEventId);
+
+            var chatHistory = _chatHistoryManager.GetOrCreateChatHistory(request.SmsNumber);
+
+            // send initial text message to the customer
+
+            string initialMessage = $"Hello {customer.FirstName}, We're excited to see you at the Falcons vs {eventMaster.OpponentName} game on {eventMaster.EventDate}. Are you planning to drive, rideshare, or take public transit?";
+            chatHistory.AddSystemMessage(initialMessage);
+
+            _logger.LogInformation(initialMessage);
+
             return Ok();
         }
         catch (Exception ex)

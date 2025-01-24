@@ -63,6 +63,7 @@ builder.Services.AddTransient<Kernel>(s =>
     var directionsPluginLogger = s.GetRequiredService<ILogger<DirectionsPlugin>>();
     var directionsPlugin = new DirectionsPlugin(directionsPluginLogger, azureDatabricksService);
     builder.Plugins.AddFromObject(directionsPlugin, "DirectionsPlugin");
+
     return builder.Build();
 });
 
