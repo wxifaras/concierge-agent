@@ -113,6 +113,8 @@ public class SmsQueueProcessor : BackgroundService
              executionSettings: new OpenAIPromptExecutionSettings { Temperature = 0.0, TopP = 0.0, ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions },
              kernel: _kernel);
 
+        chatHistory.AddSystemMessage(result.Content);
+
         // TODO: send message back to user via SMS
 
         _logger.LogInformation(result.Content);
