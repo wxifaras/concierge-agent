@@ -7,7 +7,7 @@ namespace concierge_agent_api.Services
     public interface IAzureMapsService
     {
         Task<string> GetAddressAsync(double latitude, double longitude);
-        Task<string> GetDirectionsAsync(double startLatitude, double startLongitude, double endLatitude, double endLongitude);
+        Task<string> GetDirectionsAsync(double startLatitude, double startLongitude, double endLatitude, double endLongitude, string travelMode);
         Task<(double, double)> GetPointOfInterestAsync(string businessName, double latitude, double longitude, int radius);
     }
 
@@ -36,9 +36,9 @@ namespace concierge_agent_api.Services
             return jsonString;
         }
 
-        public async Task<string> GetDirectionsAsync(double startLatitude, double startLongitude, double endLatitude, double endLongitude)
+        public async Task<string> GetDirectionsAsync(double startLatitude, double startLongitude, double endLatitude, double endLongitude, string travelMode)
         {
-            var query = $"https://atlas.microsoft.com/route/directions/json?api-version=1.0&query={startLatitude},{startLongitude}:{endLatitude},{endLongitude}&subscription-key={_subscriptionKey}";
+            var query = $"https://atlas.microsoft.com/route/directions/json?api-version=1.0&query={startLatitude},{startLongitude}:{endLatitude},{endLongitude}&travelMode={travelMode}&subscription-key={_subscriptionKey}";
             var response = await _client.GetAsync(query);
             response.EnsureSuccessStatusCode();
             var jsonString = await response.Content.ReadAsStringAsync();
