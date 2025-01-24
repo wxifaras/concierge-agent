@@ -46,11 +46,16 @@ builder.Services.AddOptions<AzureStorageOptions>()
 
 builder.Services.AddHostedService<SmsQueueProcessor>();
 
+builder.Services.AddOptions<AzureMapsOptions>()
+              .Bind(builder.Configuration.GetSection(AzureMapsOptions.AzureMaps))
+              .ValidateDataAnnotations();
+
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
 builder.Services.AddSingleton<IAzureDatabricksService, AzureDatabricksService>();
 builder.Services.AddSingleton<ICosmosDbService, CosmosDbService>();
+builder.Services.AddSingleton<IAzureMapsService, AzureMapsService>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
