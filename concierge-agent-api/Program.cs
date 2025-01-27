@@ -63,6 +63,8 @@ IAzureDatabricksService azureDatabricksService = new AzureDatabricksService(data
 var azureMapsOptions = serviceProvider.GetRequiredService<IOptions<AzureMapsOptions>>();
 IAzureMapsService azureMapsService = new AzureMapsService(azureMapsOptions);
 
+builder.Services.AddMemoryCache();
+
 builder.Services.AddTransient<Kernel>(s =>
 {
     var builder = Kernel.CreateBuilder();
@@ -84,7 +86,6 @@ builder.Services.AddSingleton<IChatHistoryManager>(sp =>
     return new ChatHistoryManager(sysPrompt);
 });
 
-builder.Services.AddMemoryCache();
 builder.Services.AddHostedService<SmsQueueProcessor>();
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi

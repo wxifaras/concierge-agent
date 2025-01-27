@@ -81,6 +81,5 @@ public class AzureMapsService : IAzureMapsService
         }
 
         throw new Exception("No point of interest found.");
-
     }
 }

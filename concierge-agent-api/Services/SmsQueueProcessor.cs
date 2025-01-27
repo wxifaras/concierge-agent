@@ -58,12 +58,12 @@ public class SmsQueueProcessor : BackgroundService
                         // "Process" the message
                         //_logger.LogInformation($"Message: {queueMessage.MessageText}");
 
-                        //byte[] data = Convert.FromBase64String(queueMessage.MessageText);
-                        //string json = Encoding.UTF8.GetString(data);
+                        byte[] data = Convert.FromBase64String(queueMessage.MessageText);
+                        string json = Encoding.UTF8.GetString(data);
 
                         // Parse the JSON
-                        //JArray jsonArray = JArray.Parse(json);
-                        JArray jsonArray = JArray.Parse(queueMessage.MessageText);
+                        JArray jsonArray = JArray.Parse(json);
+                        //JArray jsonArray = JArray.Parse(queueMessage.MessageText);
                         JObject jsonObject = jsonArray[0] as JObject;
 
                         // Dynamically access top-level properties

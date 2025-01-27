@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel;
 using System.Net.Mime;
-using Newtonsoft.Json.Linq;
 using System.Text.Json;
 using Microsoft.Extensions.Caching.Memory;
 

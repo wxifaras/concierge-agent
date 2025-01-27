@@ -56,32 +56,33 @@ public class DirectionsPlugin
         )
     {
         _logger.LogInformation($"get_parking_options");
-        List<LotLocation> lotLocations = _memoryCache.Get<List<LotLocation>>("lotLocations");
+        List<LotLocation> lotLocations = _memoryCache.Get<List<LotLocation>>("LotLocations");
 
-        // TODO IF NEEDED: pull from the cache each lot location with the corresponding calculated the distance to the stadium and add to a json structure we can return so the LLM can decide,
-        List<JObject> jsonObjectsList = new List<JObject>();
-
-        // based on whether the customer is open to a short walk or not, which parking recommendations to provide
-        foreach (LotLocation lotLocation in lotLocations)
+        if (!_memoryCache.TryGetValue("EnrichedLotLocations", out List<EnrichedLotLocation> enrichedLotLocations))
         {
-            string directionSummary = await _azureMapsService.GetDirectionsAsync(lotLocation.lat, lotLocation.longitude, Double.Parse(destinationLatitude), Double.Parse(destinationLongitude));
-
-            string distanceToStadium = JObject.Parse(directionSummary)["lengthInMeters"].ToString();
-
-            var jsonObject = new JObject
+            enrichedLotLocations = new List<EnrichedLotLocation>();
+            // based on whether the customer is open to a short walk or not, which parking recommendations to provide
+            foreach (LotLocation lotLocation in lotLocations)
             {
-                { "lot_lat", lotLocation.lat },
-                { "lot_long", lotLocation.longitude },
-                { "actual_lot", lotLocation.actual_lot },
-                { "location_type", lotLocation.locationType },
-                { "distance_to_stadium_in_meters",  distanceToStadium }
-            };
+                var directionSummary = await _azureMapsService.GetDirectionsAsync(lotLocation.lat, lotLocation.longitude, double.Parse(destinationLatitude), double.Parse(destinationLongitude));
+                var distanceToStadium = JObject.Parse(directionSummary)["lengthInMeters"].ToString();
 
-            jsonObjectsList.Add(jsonObject);
+                var enrichedLotLocation = new EnrichedLotLocation
+                {
+                    lot_lat = lotLocation.lat.ToString(),
+                    lot_long = lotLocation.longitude.ToString(),
+                    actual_lot = lotLocation.actual_lot,
+                    location_type = lotLocation.locationType,
+                    distance_to_stadium_in_meters = distanceToStadium
+                };
+
+                enrichedLotLocations.Add(enrichedLotLocation);
+            }
+
+            _memoryCache.Set("EnrichedLotLocations", enrichedLotLocations, TimeSpan.FromMinutes(120));
         }
 
-        string jsonString = JsonConvert.SerializeObject(jsonObjectsList);
-
-        return jsonString;
+        var enrichedJson = JsonConvert.SerializeObject(enrichedLotLocations, Formatting.Indented);
+        return enrichedJson;
     }
 }
