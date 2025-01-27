@@ -55,15 +55,12 @@ public class SmsQueueProcessor : BackgroundService
                 {
                     try
                     {
-                        // "Process" the message
-                        //_logger.LogInformation($"Message: {queueMessage.MessageText}");
-
                         byte[] data = Convert.FromBase64String(queueMessage.MessageText);
                         string json = Encoding.UTF8.GetString(data);
+                        _logger.LogInformation($"Message: {json}");
 
                         // Parse the JSON
                         JArray jsonArray = JArray.Parse(json);
-                        //JArray jsonArray = JArray.Parse(queueMessage.MessageText);
                         JObject jsonObject = jsonArray[0] as JObject;
 
                         // Dynamically access top-level properties
@@ -76,10 +73,10 @@ public class SmsQueueProcessor : BackgroundService
                         string fromSmsNumber = (string)dataObject["From"];
                         string message = (string)dataObject["Message"];
 
+                        await ProcessMessageAsync(fromSmsNumber, message);
+
                         // Delete the message after successful processing
                         await _queueClient.DeleteMessageAsync(queueMessage.MessageId, queueMessage.PopReceipt);
-
-                        await ProcessMessageAsync(fromSmsNumber, message);
                     }
                     catch (Exception messageProcessingException)
                     {
