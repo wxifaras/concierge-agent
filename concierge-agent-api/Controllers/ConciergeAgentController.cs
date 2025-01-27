@@ -62,10 +62,9 @@ public class ConciergeAgentController : ControllerBase
             var eventMaster = await _azureDatabricksService.GetEventMasterAsync(request.TMEventId);
 
             var chatHistory = _chatHistoryManager.GetOrCreateChatHistory(request.SmsNumber);
+            var initialMessage = $"Hello {customer.FirstName}, We're excited to see you at the Falcons vs {eventMaster.OpponentName} game on {eventMaster.EventDate}. Are you planning to drive, use rideshare, or take public transit?";
 
-            // send initial text message to the customer
-
-            string initialMessage = $"Hello {customer.FirstName}, We're excited to see you at the Falcons vs {eventMaster.OpponentName} game on {eventMaster.EventDate}. Are you planning to drive, use rideshare, or take public transit?";
+            // TODO: send initial text message to the customer
             chatHistory.AddSystemMessage(initialMessage);
 
             _logger.LogInformation(initialMessage);
