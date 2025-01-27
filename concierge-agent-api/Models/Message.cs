@@ -10,9 +10,9 @@ public record Message
     [JsonProperty(PropertyName = "id")]
     public string Id { get; set; }
 
-    public string Type { get; set; }
+    public string Type { get; set; } // will map to SK AuthorRole
 
-    public string SessionId { get; set; }
+    //public string SessionId { get; set; }
 
     public DateTime TimeStamp { get; set; }
 
@@ -20,7 +20,5 @@ public record Message
 
     public string Sender { get; set; }
 
-    public string Completion { get; set; }
-
-    public int CompletionTokens { get; set; }
+    //public string Completion { get; set; }
 }

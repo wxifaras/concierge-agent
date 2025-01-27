@@ -86,13 +86,19 @@ builder.Services.AddSingleton<IChatHistoryManager>(sp =>
     return new ChatHistoryManager(sysPrompt);
 });
 
+//var cosmosDbOptions = serviceProvider.GetRequiredService<IOptions<CosmosDbOptions>>();
+//ICosmosDbService cosmosDbService = new CosmosDbService(cosmosDbOptions);
+//builder.Services.AddSingleton<ICosmosDbChatHistoryManager>(sp =>
+//{
+//    return new CosmosDbChatHistoryManager(cosmosDbService);
+//});
+
 builder.Services.AddHostedService<SmsQueueProcessor>();
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
 builder.Services.AddSingleton<IAzureDatabricksService, AzureDatabricksService>();
-builder.Services.AddSingleton<ICosmosDbService, CosmosDbService>();
 builder.Services.AddSingleton<IAzureMapsService, AzureMapsService>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

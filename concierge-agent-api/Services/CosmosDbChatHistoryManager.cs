@@ -4,7 +4,7 @@ namespace concierge_agent_api.Services;
 
 public interface ICosmosDbChatHistoryManager
 {
-    Session GetOrCreateChatHistoryAsync(string sessionId);
+    Task<Session> GetOrCreateChatHistoryAsync(Session session);
 }
 
 public class CosmosDbChatHistoryManager : ICosmosDbChatHistoryManager
@@ -16,8 +16,8 @@ public class CosmosDbChatHistoryManager : ICosmosDbChatHistoryManager
         _cosmosDbService = cosmosDbService;
     }
 
-    public Session GetOrCreateChatHistoryAsync(string sessionId)
+    public async Task<Session> GetOrCreateChatHistoryAsync(Session session)
     {
-        throw new NotImplementedException();
+        return await _cosmosDbService.InsertSessionAsync(session);
     }
 }

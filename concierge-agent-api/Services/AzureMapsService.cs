@@ -35,6 +35,7 @@ namespace concierge_agent_api.Services
         {
             _client = new HttpClient();
         }
+        
         public AzureMapsService(IOptions<AzureMapsOptions> options)
         {
             _subscriptionKey = options.Value.SubscriptionKey;
@@ -83,9 +84,9 @@ namespace concierge_agent_api.Services
         //,{"latitude":33.75545,"longitude":-84.4028},{"latitude":33.7559,"longitude":-84.40279},{"latitude":33.756,"longitude":-84.40279},{"latitude":33.75613,"longitude":-84.40279}
         //,{"latitude":33.75633,"longitude":-84.40279},{"latitude":33.75635,"longitude":-84.40237},{"latitude":33.75641,"longitude":-84.4022},{"latitude":33.75649,"longitude":-84.40207}]}],
         //"sections":[{"startPointIndex":0,"endPointIndex":64,"sectionType":"TRAVEL_MODE","travelMode":"pedestrian"}]}]}
-        public async Task<RouteSummary> GetDirectionsAsync(double startLatitude, double startLongitude, double endLatitude, double endLongitude, TravelMode travelMode)
-        {
-            string strTravelMode = travelMode.ToString().ToLower();
+         public async Task<RouteSummary> GetDirectionsAsync(double startLatitude, double startLongitude, double endLatitude, double endLongitude, TravelMode travelMode)
+         {
+            var strTravelMode = travelMode.ToString().ToLower();
 
             var query = $"https://atlas.microsoft.com/route/directions/json?api-version=1.0&query={startLatitude},{startLongitude}:{endLatitude},{endLongitude}&travelMode={strTravelMode}&subscription-key={_subscriptionKey}";
             var response = await _client.GetAsync(query);
@@ -96,14 +97,14 @@ namespace concierge_agent_api.Services
             routeSummary.mapLink = $"https://www.bing.com/maps?rtp=~pos.{startLatitude}_{startLongitude}~pos.{endLatitude}_{endLongitude}";
 
             return routeSummary;
-        }
+         }
 
         //This method returns just the distance in meters. 
         //https://learn.microsoft.com/en-us/rest/api/maps/route/get-route-directions?view=rest-maps-2024-04-01&tabs=HTTP#successfully-retrieve-a-route-between-an-origin-and-a-destination
         //the json response is the same as GetDirectionsAsync. This method is just returning the LengthInMeters
         public async Task<int> GetDistanceAsync(double startLatitude, double startLongitude, double endLatitude, double endLongitude, TravelMode travelMode)
         {
-            string strTravelMode = travelMode.ToString().ToLower();
+            var strTravelMode = travelMode.ToString().ToLower();
 
             var query = $"https://atlas.microsoft.com/route/directions/json?api-version=1.0&query={startLatitude},{startLongitude}:{endLatitude},{endLongitude}&travelMode={strTravelMode}&subscription-key={_subscriptionKey}";
             var response = await _client.GetAsync(query);
