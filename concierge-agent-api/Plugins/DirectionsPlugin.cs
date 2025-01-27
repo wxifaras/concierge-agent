@@ -47,6 +47,25 @@ public class DirectionsPlugin
         return distance;
     }
 
+    [KernelFunction("get_directions_to_stadium")]
+    [Description("Returns a link for directions from the customer's origin to Mercedes-Benz Stadium")]
+    public async Task<string> GetDirectionsToStadium(
+        [Description("The origin of where the customer will be driving from to the stadium")] string origin,
+        [Description("The address of the origin")] string originAddress,
+        [Description("The latitude of the origin")] string originLatitude,
+        [Description("The longitude of the origin")] string originLongitude,
+        [Description("The address of Mercedes-Benz Stadium")] string destinationAddress,
+        [Description("The latitude of Mercedes-Benz Stadium")] string destinationLatitude,
+        [Description("The longitude of Mercedes-Benz Stadium")] string destinationLongitude
+        )
+    {
+        _logger.LogInformation($"get_directions_to_stadium");
+
+        RouteSummary routeSummary = await _azureMapsService.GetDirectionsAsync(Double.Parse(originLatitude), Double.Parse(originLongitude), Double.Parse(destinationLatitude), Double.Parse(destinationLongitude), TravelMode.car);
+
+        return routeSummary.mapLink;
+    }
+
     [KernelFunction("get_parking_options")]
     [Description("Returns the parking options to include the distance of each option to the Mercedes-Benz Stadium.")]
     public async Task<string> GetParkingOptions(
