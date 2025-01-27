@@ -6,6 +6,7 @@ using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel;
 using concierge_agent_api.Plugins;
 using concierge_agent_api.Prompts;
+using Microsoft.Extensions.Caching.Memory;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -67,7 +68,8 @@ builder.Services.AddTransient<Kernel>(s =>
     var builder = Kernel.CreateBuilder();
     builder.AddAzureOpenAIChatCompletion(kernelOptions.DeploymentName, kernelOptions.EndPoint, kernelOptions.ApiKey);
     var directionsPluginLogger = s.GetRequiredService<ILogger<DirectionsPlugin>>();
-    var directionsPlugin = new DirectionsPlugin(directionsPluginLogger, azureDatabricksService, azureMapsService);
+    var memoryCache = s.GetRequiredService<IMemoryCache>();
+    var directionsPlugin = new DirectionsPlugin(directionsPluginLogger, azureDatabricksService, azureMapsService, memoryCache);
     builder.Plugins.AddFromObject(directionsPlugin, "DirectionsPlugin");
 
     return builder.Build();
@@ -82,6 +84,7 @@ builder.Services.AddSingleton<IChatHistoryManager>(sp =>
     return new ChatHistoryManager(sysPrompt);
 });
 
+builder.Services.AddMemoryCache();
 builder.Services.AddHostedService<SmsQueueProcessor>();
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi

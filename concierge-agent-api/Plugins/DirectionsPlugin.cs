@@ -1,10 +1,10 @@
 ﻿using concierge_agent_api.Models;
 using concierge_agent_api.Services;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.SemanticKernel;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.ComponentModel;
-using System.Net;
 
 namespace concierge_agent_api.Plugins;
 
@@ -13,15 +13,18 @@ public class DirectionsPlugin
     private readonly ILogger<DirectionsPlugin> _logger;
     private readonly IAzureDatabricksService _azureDatabricksService;
     private readonly IAzureMapsService _azureMapsService;
+    private readonly IMemoryCache _memoryCache;
 
     public DirectionsPlugin(
         ILogger<DirectionsPlugin> logger,
         IAzureDatabricksService azureDatabricksService,
-        IAzureMapsService azureMapsService)
+        IAzureMapsService azureMapsService,
+        IMemoryCache memoryCache)
     {
         _logger = logger;
         _azureDatabricksService = azureDatabricksService;
         _azureMapsService = azureMapsService;
+        _memoryCache = memoryCache;
     }
 
     [KernelFunction("get_distance_to_stadium")]
@@ -36,6 +39,7 @@ public class DirectionsPlugin
         [Description("The longitude of Mercedes-Benz Stadium")] string destinationLongitude
         )
     {
+        _logger.LogInformation($"get_distance_to_stadium");
         //return $"Directions to stadium from {origin} ({originAddress}) are as follows...";
         string directions = await _azureMapsService.GetDirectionsAsync(Double.Parse(originLatitude), Double.Parse(originLongitude), Double.Parse(destinationLatitude), Double.Parse(destinationLongitude));
 
@@ -51,7 +55,8 @@ public class DirectionsPlugin
         [Description("Whether the customer is open to a short walk or not")] bool isOpenToShortWalk*/
         )
     {
-        List<LotLocation> lotLocations = await _azureDatabricksService.GetLotLocationsAsync(true);
+        _logger.LogInformation($"get_parking_options");
+        List<LotLocation> lotLocations = _memoryCache.Get<List<LotLocation>>("lotLocations");
 
         // TODO IF NEEDED: pull from the cache each lot location with the corresponding calculated the distance to the stadium and add to a json structure we can return so the LLM can decide,
         List<JObject> jsonObjectsList = new List<JObject>();
