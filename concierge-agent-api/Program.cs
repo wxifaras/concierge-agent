@@ -6,6 +6,7 @@ using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel;
 using concierge_agent_api.Plugins;
 using concierge_agent_api.Prompts;
+using Microsoft.Extensions.Caching.Memory;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -45,6 +46,10 @@ builder.Services.AddOptions<DatabricksOptions>()
            .Bind(builder.Configuration.GetSection(DatabricksOptions.AzureDatabricks))
            .ValidateDataAnnotations();
 
+builder.Services.AddOptions<AzureMapsOptions>()
+           .Bind(builder.Configuration.GetSection(AzureMapsOptions.AzureMaps))
+           .ValidateDataAnnotations();
+
 builder.Services.AddOptions<AzureStorageOptions>()
            .Bind(builder.Configuration.GetSection(AzureStorageOptions.AzureStorage))
            .ValidateDataAnnotations();
@@ -55,13 +60,18 @@ var serviceProvider = builder.Services.BuildServiceProvider();
 var kernelOptions = serviceProvider.GetRequiredService<IOptions<AzureOpenAiOptions>>().Value;
 var databricksOptions = serviceProvider.GetRequiredService<IOptions<DatabricksOptions>>();
 IAzureDatabricksService azureDatabricksService = new AzureDatabricksService(databricksOptions);
+var azureMapsOptions = serviceProvider.GetRequiredService<IOptions<AzureMapsOptions>>();
+IAzureMapsService azureMapsService = new AzureMapsService(azureMapsOptions);
+
+builder.Services.AddMemoryCache();
 
 builder.Services.AddTransient<Kernel>(s =>
 {
     var builder = Kernel.CreateBuilder();
     builder.AddAzureOpenAIChatCompletion(kernelOptions.DeploymentName, kernelOptions.EndPoint, kernelOptions.ApiKey);
     var directionsPluginLogger = s.GetRequiredService<ILogger<DirectionsPlugin>>();
-    var directionsPlugin = new DirectionsPlugin(directionsPluginLogger, azureDatabricksService);
+    var memoryCache = s.GetRequiredService<IMemoryCache>();
+    var directionsPlugin = new DirectionsPlugin(directionsPluginLogger, azureDatabricksService, azureMapsService, memoryCache);
     builder.Plugins.AddFromObject(directionsPlugin, "DirectionsPlugin");
 
     return builder.Build();
@@ -84,10 +94,6 @@ builder.Services.AddSingleton<IChatHistoryManager>(sp =>
 //});
 
 builder.Services.AddHostedService<SmsQueueProcessor>();
-
-builder.Services.AddOptions<AzureMapsOptions>()
-              .Bind(builder.Configuration.GetSection(AzureMapsOptions.AzureMaps))
-              .ValidateDataAnnotations();
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();

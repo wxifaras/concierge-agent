@@ -5,8 +5,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel;
 using System.Net.Mime;
-using Newtonsoft.Json.Linq;
 using System.Text.Json;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace concierge_agent_api.Controllers;
 
@@ -20,19 +20,22 @@ public class ConciergeAgentController : ControllerBase
     private readonly Kernel _kernel;
     private readonly IChatCompletionService _chat;
     private readonly IChatHistoryManager _chatHistoryManager;
+    private readonly IMemoryCache _memoryCache;
 
     public ConciergeAgentController(
         ILogger<ConciergeAgentController> logger,
         IAzureDatabricksService azureDatabricksService,
         Kernel kernel,
         IChatCompletionService chat,
-        IChatHistoryManager chathistorymanager)
+        IChatHistoryManager chathistorymanager,
+        IMemoryCache memoryCache)
     {
         _kernel = kernel;
         _chat = chat;
         _chatHistoryManager = chathistorymanager;
         _logger = logger;
         _azureDatabricksService = azureDatabricksService;
+        _memoryCache = memoryCache;
     }
 
     [MapToApiVersion("1.0")]
@@ -50,6 +53,8 @@ public class ConciergeAgentController : ControllerBase
                 return BadRequest(ModelState);
             }
 
+            await CacheLotLocations();
+            await CacheLotLookup();
             var jsonRequest = JsonSerializer.Serialize(request);
             _logger.LogInformation($"Initiating event workflow for request: {jsonRequest}");
 
@@ -60,7 +65,7 @@ public class ConciergeAgentController : ControllerBase
 
             // send initial text message to the customer
 
-            string initialMessage = $"Hello {customer.FirstName}, We're excited to see you at the Falcons vs {eventMaster.OpponentName} game on {eventMaster.EventDate}. Are you planning to drive, rideshare, or take public transit?";
+            string initialMessage = $"Hello {customer.FirstName}, We're excited to see you at the Falcons vs {eventMaster.OpponentName} game on {eventMaster.EventDate}. Are you planning to drive, use rideshare, or take public transit?";
             chatHistory.AddSystemMessage(initialMessage);
 
             _logger.LogInformation(initialMessage);
@@ -71,6 +76,24 @@ public class ConciergeAgentController : ControllerBase
         {
             _logger.LogError(ex, string.Empty);
             return StatusCode(StatusCodes.Status500InternalServerError);
+        }
+    }
+
+    private async Task CacheLotLocations()
+    {
+        if (!_memoryCache.TryGetValue("LotLocations", out List<LotLocation> lotLocations))
+        {
+            lotLocations = await _azureDatabricksService.GetLotLocationsAsync(true);
+            _memoryCache.Set("LotLocations", lotLocations, TimeSpan.FromMinutes(120));
+        }
+    }
+
+    private async Task CacheLotLookup()
+    {
+        if (!_memoryCache.TryGetValue("LotLookup", out List<LotLookup> lotLookup))
+        {
+            lotLookup = await _azureDatabricksService.GetLotLookupAsync();
+            _memoryCache.Set("LotLookup", lotLookup, TimeSpan.FromMinutes(120));
         }
     }
 }
