@@ -29,21 +29,22 @@ public class DirectionsPlugin
 
     [KernelFunction("get_distance_to_stadium")]
     [Description("Calculates the distance from the customer's origin to Mercedes-Benz Stadium")]
-    public async Task<string> GetDistanceToStadium(
+    public async Task<int> GetDistanceToStadium(
         [Description("The origin of where the customer will be driving from to the stadium")] string origin,
         [Description("The address of the origin")] string originAddress,
         [Description("The latitude of the origin")] string originLatitude,
         [Description("The longitude of the origin")] string originLongitude,
         [Description("The address of Mercedes-Benz Stadium")] string destinationAddress,
         [Description("The latitude of Mercedes-Benz Stadium")] string destinationLatitude,
-        [Description("The longitude of Mercedes-Benz Stadium")] string destinationLongitude
+        [Description("The longitude of Mercedes-Benz Stadium")] string destinationLongitude,
+        [Description("The travel mode to the stadium")] TravelMode travelMode
         )
     {
         _logger.LogInformation($"get_distance_to_stadium");
-        //return $"Directions to stadium from {origin} ({originAddress}) are as follows...";
-        string directions = await _azureMapsService.GetDirectionsAsync(Double.Parse(originLatitude), Double.Parse(originLongitude), Double.Parse(destinationLatitude), Double.Parse(destinationLongitude));
 
-        return directions;
+        int distance = await _azureMapsService.GetDistanceAsync(Double.Parse(originLatitude), Double.Parse(originLongitude), Double.Parse(destinationLatitude), Double.Parse(destinationLongitude), travelMode);
+
+        return distance;
     }
 
     [KernelFunction("get_parking_options")]
@@ -64,8 +65,7 @@ public class DirectionsPlugin
             // based on whether the customer is open to a short walk or not, which parking recommendations to provide
             foreach (LotLocation lotLocation in lotLocations)
             {
-                var directionSummary = await _azureMapsService.GetDirectionsAsync(lotLocation.lat, lotLocation.longitude, double.Parse(destinationLatitude), double.Parse(destinationLongitude));
-                var distanceToStadium = JObject.Parse(directionSummary)["lengthInMeters"].ToString();
+                int distanceToStadium = await _azureMapsService.GetDistanceAsync(lotLocation.lat, lotLocation.longitude, double.Parse(destinationLatitude), double.Parse(destinationLongitude), TravelMode.pedestrian);
 
                 var enrichedLotLocation = new EnrichedLotLocation
                 {
@@ -73,7 +73,7 @@ public class DirectionsPlugin
                     lot_long = lotLocation.longitude.ToString(),
                     actual_lot = lotLocation.actual_lot,
                     location_type = lotLocation.locationType,
-                    distance_to_stadium_in_meters = distanceToStadium
+                    distance_to_stadium_in_meters = distanceToStadium.ToString()
                 };
 
                 enrichedLotLocations.Add(enrichedLotLocation);

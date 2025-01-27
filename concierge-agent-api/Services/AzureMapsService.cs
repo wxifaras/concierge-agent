@@ -5,12 +5,24 @@ using Newtonsoft.Json.Linq;
 
 namespace concierge_agent_api.Services
 {
+    // travel mode options for the map service: https://learn.microsoft.com/en-us/rest/api/maps/route/get-route-directions?view=rest-maps-2024-04-01&tabs=HTTP#travelmode
+    public enum TravelMode
+    {
+        bicycle,
+        bus,
+        car,
+        motorcycle,
+        pedestrian,
+        taxi,
+        truck,
+        van
+    }
 
     public interface IAzureMapsService
     {
         Task<StreetAddress> GetAddressAsync(double latitude, double longitude);
-        Task<RouteSummary> GetDirectionsAsync(double startLatitude, double startLongitude, double endLatitude, double endLongitude, string travelMode);
-        Task<int> GetDistanceAsync(double startLatitude, double startLongitude, double endLatitude, double endLongitude, string travelMode);
+        Task<RouteSummary> GetDirectionsAsync(double startLatitude, double startLongitude, double endLatitude, double endLongitude, TravelMode travelMode);
+        Task<int> GetDistanceAsync(double startLatitude, double startLongitude, double endLatitude, double endLongitude, TravelMode travelMode);
         Task<PointOfInterest> GetPointOfInterestAsync(string businessName, double latitude, double longitude, int radius);
     }
 
@@ -71,9 +83,11 @@ namespace concierge_agent_api.Services
         //,{"latitude":33.75545,"longitude":-84.4028},{"latitude":33.7559,"longitude":-84.40279},{"latitude":33.756,"longitude":-84.40279},{"latitude":33.75613,"longitude":-84.40279}
         //,{"latitude":33.75633,"longitude":-84.40279},{"latitude":33.75635,"longitude":-84.40237},{"latitude":33.75641,"longitude":-84.4022},{"latitude":33.75649,"longitude":-84.40207}]}],
         //"sections":[{"startPointIndex":0,"endPointIndex":64,"sectionType":"TRAVEL_MODE","travelMode":"pedestrian"}]}]}
-        public async Task<RouteSummary> GetDirectionsAsync(double startLatitude, double startLongitude, double endLatitude, double endLongitude, string travelMode)
+        public async Task<RouteSummary> GetDirectionsAsync(double startLatitude, double startLongitude, double endLatitude, double endLongitude, TravelMode travelMode)
         {
-            var query = $"https://atlas.microsoft.com/route/directions/json?api-version=1.0&query={startLatitude},{startLongitude}:{endLatitude},{endLongitude}&travelMode={travelMode}&subscription-key={_subscriptionKey}";
+            string strTravelMode = travelMode.ToString().ToLower();
+
+            var query = $"https://atlas.microsoft.com/route/directions/json?api-version=1.0&query={startLatitude},{startLongitude}:{endLatitude},{endLongitude}&travelMode={strTravelMode}&subscription-key={_subscriptionKey}";
             var response = await _client.GetAsync(query);
             response.EnsureSuccessStatusCode();
             var jsonString = await response.Content.ReadAsStringAsync();
@@ -87,9 +101,11 @@ namespace concierge_agent_api.Services
         //This method returns just the distance in meters. 
         //https://learn.microsoft.com/en-us/rest/api/maps/route/get-route-directions?view=rest-maps-2024-04-01&tabs=HTTP#successfully-retrieve-a-route-between-an-origin-and-a-destination
         //the json response is the same as GetDirectionsAsync. This method is just returning the LengthInMeters
-        public async Task<int> GetDistanceAsync(double startLatitude, double startLongitude, double endLatitude, double endLongitude, string travelMode)
+        public async Task<int> GetDistanceAsync(double startLatitude, double startLongitude, double endLatitude, double endLongitude, TravelMode travelMode)
         {
-            var query = $"https://atlas.microsoft.com/route/directions/json?api-version=1.0&query={startLatitude},{startLongitude}:{endLatitude},{endLongitude}&travelMode={travelMode}&subscription-key={_subscriptionKey}";
+            string strTravelMode = travelMode.ToString().ToLower();
+
+            var query = $"https://atlas.microsoft.com/route/directions/json?api-version=1.0&query={startLatitude},{startLongitude}:{endLatitude},{endLongitude}&travelMode={strTravelMode}&subscription-key={_subscriptionKey}";
             var response = await _client.GetAsync(query);
             response.EnsureSuccessStatusCode();
             var jsonString = await response.Content.ReadAsStringAsync();
