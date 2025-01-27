@@ -1,6 +1,5 @@
 ﻿namespace concierge_agent_api.Services;
 
-using Azure.Core;
 using Azure.Storage.Queues;
 using Azure.Storage.Queues.Models;
 using concierge_agent_api.Models;
@@ -12,8 +11,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
-using Microsoft.AspNetCore.Mvc;
-using System.Drawing.Text;
 
 public class SmsQueueProcessor : BackgroundService
 {
