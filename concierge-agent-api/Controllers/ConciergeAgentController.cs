@@ -94,12 +94,12 @@ public class ConciergeAgentController : ControllerBase
         }
     }
 
-    private async Task CacheLotLocations(string TMEventId)
+    private async Task CacheLotLocations(string tmEventId)
     {
         if (!_memoryCache.TryGetValue("LotLocations", out List<LotLocation> lotLocations))
         {
-            lotLocations = await _azureDatabricksService.GetLotLocationsAsync(true, TMEventId);
-            _memoryCache.Set($"LotLocations-{TMEventId}", lotLocations, TimeSpan.FromMinutes(120));
+            lotLocations = await _azureDatabricksService.GetLotLocationsAsync(true, tmEventId);
+            _memoryCache.Set($"LotLocations-{tmEventId}", lotLocations, TimeSpan.FromMinutes(120));
         }
     }
 
