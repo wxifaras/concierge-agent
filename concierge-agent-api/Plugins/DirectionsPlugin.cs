@@ -94,7 +94,8 @@ public class DirectionsPlugin
                     lot_long = lotLocation.longitude.ToString(),
                     actual_lot = lotLocation.actual_lot,
                     location_type = lotLocation.locationType,
-                    distance_to_stadium_in_meters = distanceToStadium.ToString()
+                    distance_to_stadium_in_meters = distanceToStadium.ToString(),
+                    lot_price = lotLocation.lot_price
                 };
 
                 enrichedLotLocations.Add(enrichedLotLocation);

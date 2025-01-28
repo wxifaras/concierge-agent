@@ -20,7 +20,8 @@ public class CorePrompts
         { "lot_long", lotLocation.longitude },
         { "actual_lot", lotLocation.actual_lot },
         { "location_type", lotLocation.locationType },
-        { "distance_to_stadium_in_meters",  distanceToStadium }
+        { "distance_to_stadium_in_meters",  distanceToStadium },
+        { "lot_price", lot_price }
     }]
 
     You will use this data to provide the customer with the top three parking recommendations based on whether they are open to a short walk or not. The distance to the stadium is in meters, which
