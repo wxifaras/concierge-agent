@@ -1,0 +1,15 @@
+{
+  "profiles": {
+    "EventFunction": {
+      "commandName": "Project",
+      "commandLineArgs": "--port 7206"
+    },
+    "Container (Dockerfile)": {
+      "commandName": "Docker",
+      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}",
+      "containerRunArguments": "--init",
+      "httpPort": 31169,
+      "useSSL": false
+    }
+  }
+}

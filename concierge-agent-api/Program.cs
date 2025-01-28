@@ -74,6 +74,9 @@ builder.Services.AddTransient<Kernel>(s =>
     var directionsPlugin = new DirectionsPlugin(directionsPluginLogger, azureDatabricksService, azureMapsService, memoryCache);
     builder.Plugins.AddFromObject(directionsPlugin, "DirectionsPlugin");
 
+    var eventsPluginLogger = s.GetRequiredService<ILogger<EventsPlugin>>();
+    var eventsPlugin = new EventsPlugin(eventsPluginLogger, serviceProvider.GetRequiredService<IOptions<AzureStorageOptions>>());
+    builder.Plugins.AddFromObject(eventsPlugin, "EventsPlugin");
     return builder.Build();
 });
 

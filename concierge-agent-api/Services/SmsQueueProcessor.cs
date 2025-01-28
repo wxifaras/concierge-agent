@@ -27,13 +27,13 @@ public class SmsQueueProcessor : BackgroundService
         IChatHistoryManager chathistorymanager,
         ILogger<SmsQueueProcessor> logger)
     {
-        if (string.IsNullOrWhiteSpace(options.Value.ConnectionString))
+        if (string.IsNullOrWhiteSpace(options.Value.QueueConnectionString))
             throw new ArgumentException("Azure Storage Connection String is not configured.", nameof(options));
 
         if (string.IsNullOrWhiteSpace(options.Value.QueueName))
             throw new ArgumentException("Azure Storage Queue Name is not configured.", nameof(options));
 
-        _queueClient = new QueueClient(options.Value.ConnectionString, options.Value.QueueName);
+        _queueClient = new QueueClient(options.Value.QueueConnectionString, options.Value.QueueName);
         _chat = chat;
         _kernel = kernel;
         _chatHistoryManager = chathistorymanager;

@@ -168,7 +168,6 @@ public class AzureDatabricksService : IAzureDatabricksService
                     }
 
                     return allData.ToString();
-                    return dataArray[0][0].ToString().ToString();
                 }
                 else if (state == "FAILED")
                 {
