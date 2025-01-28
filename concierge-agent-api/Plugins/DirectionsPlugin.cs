@@ -1,4 +1,5 @@
-﻿using concierge_agent_api.Models;
+﻿using Asp.Versioning.Conventions;
+using concierge_agent_api.Models;
 using concierge_agent_api.Services;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.SemanticKernel;
@@ -27,39 +28,39 @@ public class DirectionsPlugin
         _memoryCache = memoryCache;
     }
 
-    [KernelFunction("get_distance_to_stadium")]
-    [Description("Calculates the distance from the customer's origin to Mercedes-Benz Stadium")]
-    public async Task<int> GetDistanceToStadium(
-        [Description("The origin of where the customer will be driving from to the stadium")] string origin,
+    [KernelFunction("get_distance_to_destination")]
+    [Description("Calculates the distance from the customer's origin to the specified destination")]
+    public async Task<int> GetDistanceToDestination(
+        [Description("The origin of where the customer will be driving from to the destination")] string origin,
         [Description("The address of the origin")] string originAddress,
         [Description("The latitude of the origin")] string originLatitude,
         [Description("The longitude of the origin")] string originLongitude,
-        [Description("The address of Mercedes-Benz Stadium")] string destinationAddress,
-        [Description("The latitude of Mercedes-Benz Stadium")] string destinationLatitude,
-        [Description("The longitude of Mercedes-Benz Stadium")] string destinationLongitude,
+        [Description("The address of the destination")] string destinationAddress,
+        [Description("The latitude of the destination")] string destinationLatitude,
+        [Description("The longitude of the destination")] string destinationLongitude,
         [Description("The travel mode to the stadium")] TravelMode travelMode
         )
     {
-        _logger.LogInformation($"get_distance_to_stadium");
+        _logger.LogInformation($"get_distance_to_destination");
 
         int distance = await _azureMapsService.GetDistanceAsync(Double.Parse(originLatitude), Double.Parse(originLongitude), Double.Parse(destinationLatitude), Double.Parse(destinationLongitude), travelMode);
 
         return distance;
     }
 
-    [KernelFunction("get_directions_to_stadium")]
-    [Description("Returns a link for directions from the customer's origin to Mercedes-Benz Stadium")]
-    public async Task<string> GetDirectionsToStadium(
-        [Description("The origin of where the customer will be driving from to the stadium")] string origin,
+    [KernelFunction("get_directions_to_destination")]
+    [Description("Returns a link for directions from the customer's origin to the specified destination")]
+    public async Task<string> GetDirectionsToDestination(
+        [Description("The origin of where the customer will be driving from to the destination")] string origin,
         [Description("The address of the origin")] string originAddress,
         [Description("The latitude of the origin")] string originLatitude,
         [Description("The longitude of the origin")] string originLongitude,
-        [Description("The address of Mercedes-Benz Stadium")] string destinationAddress,
-        [Description("The latitude of Mercedes-Benz Stadium")] string destinationLatitude,
-        [Description("The longitude of Mercedes-Benz Stadium")] string destinationLongitude
+        [Description("The address of the destination")] string destinationAddress,
+        [Description("The latitude of the destination")] string destinationLatitude,
+        [Description("The longitude of destination")] string destinationLongitude
         )
     {
-        _logger.LogInformation($"get_directions_to_stadium");
+        _logger.LogInformation($"get_directions_to_destination");
 
         RouteSummary routeSummary = await _azureMapsService.GetDirectionsAsync(Double.Parse(originLatitude), Double.Parse(originLongitude), Double.Parse(destinationLatitude), Double.Parse(destinationLongitude), TravelMode.car);
 
@@ -103,5 +104,35 @@ public class DirectionsPlugin
 
         var enrichedJson = JsonConvert.SerializeObject(enrichedLotLocations, Formatting.Indented);
         return enrichedJson;
+    }
+
+    [KernelFunction("get_closest_marta_station")]
+    [Description("Returns the closest MARTA station to the customers origin location")]
+    public async Task<string> GetClosestMartaStation(
+        [Description("The origin of where the customer will be driving from to the stadium")] string origin,
+        [Description("The address of the origin")] string originAddress,
+        [Description("The latitude of the origin")] string originLatitude,
+        [Description("The longitude of the origin")] string originLongitude,
+        [Description("JSON list of MARTA stations closest to the customer")] string jsonMartaStations
+        )
+    {
+        _logger.LogInformation($"get_closest_marta_station");
+
+        var stationList = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(jsonMartaStations);
+
+        // add the distance to each MARTA station from the customer's origin
+        foreach (var station in stationList)
+        {
+            string stationLat = (string)station["station_lat"];
+            string stationLong = (string)station["station_long"];
+
+            int distanceToStation = await _azureMapsService.GetDistanceAsync(double.Parse(originLatitude), double.Parse(originLongitude), double.Parse(stationLat), double.Parse(stationLong), TravelMode.car);
+
+            station["distanceToStation"] = distanceToStation;
+        }
+
+        string strStationList = JsonConvert.SerializeObject(stationList, Formatting.Indented);
+
+        return strStationList;
     }
 }
