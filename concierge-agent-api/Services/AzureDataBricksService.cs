@@ -12,8 +12,9 @@ public interface IAzureDatabricksService
     Task<Customer> GetCustomerByEmailAsync(string emailAddress);
     Task<Customer> GetCustomerBySmsNumberAsync(string smsNumber);
     Task<DimEventMaster> GetEventMasterAsync(string eventId);
-    Task<List<LotLocation>> GetLotLocationsAsync(bool isLot);
+    Task<List<LotLocation>> GetLotLocationsAsync(bool isLot, string tmEventId);
     Task<List<LotLookup>> GetLotLookupAsync();
+    Task<List<LotEventPrice>> GetLotPriceByTMEventIdAsync(string tmEventId);
     Task<Section> GetSectionAsync(string sectionId);
     Task<FutureTicket> GetFutureTicketAsync(string email, string tmEventId);
 }
@@ -66,11 +67,29 @@ public class AzureDatabricksService : IAzureDatabricksService
         return eventMaster;
     }
 
-    public async Task<List<LotLocation>> GetLotLocationsAsync(bool isLot)
+    public async Task<List<LotLocation>> GetLotLocationsAsync(bool isLot, string tmEventId)
     {
         var locationType = isLot ? "Lot" : "Gate";
 
-        var query = $"SELECT STRUCT(actual_lot, lat, long, locationType) FROM ambse_prod_gold_catalog.parking.lot_location WHERE locationType = '{locationType}'";
+        var query =
+            "SELECT " +
+            "STRUCT(" +
+            "  lot_location.actual_lot, " +
+            "  lot_location.lat, " +
+            "  lot_location.long, " +
+            "  lot_location.locationType, " +
+            "  event_lot_cost.lot_price" +
+            ") AS combined_struct " +
+            "FROM " +
+            "ambse_prod_gold_catalog.parking.lot_location AS lot_location " +
+            "JOIN " +
+            "ambse_prod_gold_catalog.parking.event_lot_cost AS event_lot_cost " +
+            "ON " +
+            "lot_location.actual_lot = event_lot_cost.actual_lot " +
+            "WHERE " +
+            "lot_location.locationType = 'Lot' " +
+            "AND event_lot_cost.TMEventId = '" + tmEventId + "'";
+
         var jsonString = await GetAsync(query);
         var lotLocations = JsonConvert.DeserializeObject<List<LotLocation>>(jsonString);
         return lotLocations;
@@ -82,6 +101,13 @@ public class AzureDatabricksService : IAzureDatabricksService
         var jsonString = await GetAsync(query);
         var lotLookup = JsonConvert.DeserializeObject<List<LotLookup>>(jsonString);
         return lotLookup;
+    }
+    public async Task<List<LotEventPrice>> GetLotPriceByTMEventIdAsync(string tmEventId)
+    {
+        var query = $"SELECT STRUCT(*) FROM ambse_prod_gold_catalog.parking.event_lot_cost WHERE TMEventId = '{tmEventId}'";
+        var jsonString = await GetAsync(query);
+        var lotPrice = JsonConvert.DeserializeObject<List<LotEventPrice>>(jsonString);
+        return lotPrice;
     }
 
     /// <summary>

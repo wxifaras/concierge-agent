@@ -53,7 +53,7 @@ public class ConciergeAgentController : ControllerBase
                 return BadRequest(ModelState);
             }
 
-            await CacheLotLocations();
+            await CacheLotLocations(request.TMEventId);
             await CacheLotLookup();
             var jsonRequest = JsonSerializer.Serialize(request);
             _logger.LogInformation($"Initiating event workflow for request: {jsonRequest}");
@@ -94,12 +94,12 @@ public class ConciergeAgentController : ControllerBase
         }
     }
 
-    private async Task CacheLotLocations()
+    private async Task CacheLotLocations(string tmEventId)
     {
         if (!_memoryCache.TryGetValue("LotLocations", out List<LotLocation> lotLocations))
         {
-            lotLocations = await _azureDatabricksService.GetLotLocationsAsync(true);
-            _memoryCache.Set("LotLocations", lotLocations, TimeSpan.FromMinutes(120));
+            lotLocations = await _azureDatabricksService.GetLotLocationsAsync(true, tmEventId);
+            _memoryCache.Set($"LotLocations-{tmEventId}", lotLocations, TimeSpan.FromMinutes(120));
         }
     }
 
