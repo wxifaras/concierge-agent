@@ -9,6 +9,7 @@ public class LotLocation
     [JsonProperty("long")]
     public double longitude { get; set; }
     public string locationType { get; set; }
+    public int lot_price {  get; set; } 
 }
 
 public class EnrichedLotLocation
