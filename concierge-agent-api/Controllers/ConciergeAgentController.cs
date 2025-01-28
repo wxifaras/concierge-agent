@@ -66,7 +66,7 @@ public class ConciergeAgentController : ControllerBase
 
             // TODO: send initial text message to the customer
             chatHistory.AddSystemMessage(initialMessage);
-
+            chatHistory.AddSystemMessage($"TMEventId:{request.TMEventId}"); // needed to look up event
             _logger.LogInformation(initialMessage);
 
             return Ok();
