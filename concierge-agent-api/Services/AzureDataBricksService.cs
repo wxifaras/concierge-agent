@@ -78,7 +78,7 @@ public class AzureDatabricksService : IAzureDatabricksService
             "  lot_location.lat, " +
             "  lot_location.long, " +
             "  lot_location.locationType, " +
-            "  event_lot_cost.lot_price" +
+            "  event_lot_cost.lot_price, " +
             "  event_lot_cost.TMEventId) AS combined_struct " +
             "FROM " +
             "ambse_prod_gold_catalog.parking.lot_location AS lot_location " +
