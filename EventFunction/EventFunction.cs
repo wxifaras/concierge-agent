@@ -29,12 +29,20 @@ public class EventFunction
         try
         {
             _logger.LogInformation("Start EventFileTrigger");
+            
+            // we are uploading a .txt file which will trigger this again, so we will ignore it
+            if (name.EndsWith(".txt", StringComparison.OrdinalIgnoreCase))
+            {
+                _logger.LogInformation($"Skipping {name}");
+                return;
+            }
+
             var pdfText = ExtractTextFromPdf(pdfStream);
 
             // *** TMEventId ***
-            var tmEventId = Regex.Match(name, @"\d+").Value;
+            var tmEventId = Regex.Match(name, @"(?<=_)(\d+)(?=\.pdf$)").Value;
 
-            _logger.LogInformation($" Extracted PDF text and creating {tmEventId}.txt");
+            _logger.LogInformation($"Extracted PDF text and creating {tmEventId}.txt");
 
             await UploadPdfTextAsync(tmEventId, pdfText);
 
