@@ -80,10 +80,10 @@ builder.Services.AddTransient<Kernel>(s =>
     return builder.Build();
 });
 
-builder.Services.AddSingleton<IChatCompletionService>(sp =>
+builder.Services.AddTransient<IChatCompletionService>(sp =>
          sp.GetRequiredService<Kernel>().GetRequiredService<IChatCompletionService>());
 
-builder.Services.AddSingleton<IChatHistoryManager>(sp =>
+builder.Services.AddTransient<IChatHistoryManager>(sp =>
 {
     var sysPrompt = CorePrompts.GetSystemPrompt();
     return new ChatHistoryManager(sysPrompt);
