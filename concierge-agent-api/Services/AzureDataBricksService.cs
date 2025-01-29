@@ -79,7 +79,7 @@ public class AzureDatabricksService : IAzureDatabricksService
             "  lot_location.long, " +
             "  lot_location.locationType, " +
             "  event_lot_cost.lot_price" +
-            ") AS combined_struct " +
+            "  event_lot_cost.TMEventId) AS combined_struct " +
             "FROM " +
             "ambse_prod_gold_catalog.parking.lot_location AS lot_location " +
             "JOIN " +
