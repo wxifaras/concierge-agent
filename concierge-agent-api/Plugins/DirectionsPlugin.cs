@@ -2,6 +2,7 @@
 using concierge_agent_api.Models;
 using concierge_agent_api.Services;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -95,7 +96,8 @@ public class DirectionsPlugin
                     actual_lot = lotLocation.actual_lot,
                     location_type = lotLocation.locationType,
                     distance_to_stadium_in_meters = distanceToStadium.ToString(),
-                    lot_price = lotLocation.lot_price
+                    lot_price = lotLocation.lot_price,
+                    TMEventId = lotLocation.TMEventId
                 };
 
                 enrichedLotLocations.Add(enrichedLotLocation);

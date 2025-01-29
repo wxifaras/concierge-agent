@@ -21,4 +21,5 @@ public class EnrichedLotLocation
     public string location_type { get; set; }
     public string distance_to_stadium_in_meters { get; set; }
     public int? lot_price { get; set; }
+    public string TMEventId { get; set; }
 }
