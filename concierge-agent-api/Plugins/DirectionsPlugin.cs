@@ -72,12 +72,13 @@ public class DirectionsPlugin
     public async Task<string> GetParkingOptions(
         [Description("The address of Mercedes-Benz Stadium")] string destinationAddress,
         [Description("The latitude of Mercedes-Benz Stadium")] string destinationLatitude,
-        [Description("The longitude of Mercedes-Benz Stadium")] string destinationLongitude/*,
+        [Description("The longitude of Mercedes-Benz Stadium")] string destinationLongitude,
+        [Description("The TMEventId of the event")] string tmEventId/*,
         [Description("Whether the customer is open to a short walk or not")] bool isOpenToShortWalk*/
         )
     {
         _logger.LogInformation($"get_parking_options");
-        List<LotLocation> lotLocations = _memoryCache.Get<List<LotLocation>>("LotLocations");
+        List<LotLocation> lotLocations = _memoryCache.Get<List<LotLocation>>($"LotLocations-{tmEventId}");
 
         if (!_memoryCache.TryGetValue("EnrichedLotLocations", out List<EnrichedLotLocation> enrichedLotLocations))
         {
@@ -93,7 +94,8 @@ public class DirectionsPlugin
                     lot_long = lotLocation.longitude.ToString(),
                     actual_lot = lotLocation.actual_lot,
                     location_type = lotLocation.locationType,
-                    distance_to_stadium_in_meters = distanceToStadium.ToString()
+                    distance_to_stadium_in_meters = distanceToStadium.ToString(),
+                    lot_price = lotLocation.lot_price
                 };
 
                 enrichedLotLocations.Add(enrichedLotLocation);
