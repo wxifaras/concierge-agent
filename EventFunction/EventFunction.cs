@@ -5,8 +5,6 @@ using Azure.Storage.Blobs;
 using System.Text.RegularExpressions;
 using Azure.AI.DocumentIntelligence;
 using Azure;
-using Microsoft.Extensions.ObjectPool;
-using System.Collections.Specialized;
 
 namespace EventFunction;
 
