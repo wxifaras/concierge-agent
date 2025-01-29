@@ -22,7 +22,7 @@ public class EventFunction
 
     [Function("EventFileTrigger")]
     public async Task EventFileTrigger(
-       [BlobTrigger("events/{name}",
+       [BlobTrigger("events/{name}.pdf",
        Connection = "StorageConnectionString")] Stream pdfStream,
        string name)
     {
