@@ -16,7 +16,7 @@ public class EventsPlugin
         IOptions<AzureStorageOptions> options)
     {
         _logger = logger;
-        _connectionString = options.Value.StorageConnectionString;
+        _connectionString = options.Value.StorageConnectionString ?? throw new ArgumentNullException(nameof(options.Value.StorageConnectionString));
     }
 
     [KernelFunction("get_event_information")]
@@ -27,8 +27,8 @@ public class EventsPlugin
         _logger.LogInformation($"get_event_information");
 
         var blobServiceClient = new BlobServiceClient(_connectionString);
-        var containerClient = blobServiceClient.GetBlobContainerClient($"events/{tmEventId}");
-        var blobClient = containerClient.GetBlobClient($"{tmEventId}.txt");
+        var containerClient = blobServiceClient.GetBlobContainerClient($"events");
+        var blobClient = containerClient.GetBlobClient($"{tmEventId}/{tmEventId}.txt");
 
         var response = await blobClient.DownloadContentAsync();
         var content = response.Value.Content.ToString();
