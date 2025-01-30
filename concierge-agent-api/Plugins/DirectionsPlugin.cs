@@ -136,8 +136,8 @@ public class DirectionsPlugin
         // add the distance to each MARTA station from the customer's origin
         foreach (var station in stationList)
         {
-            string stationLat = station["station_lat"].ToString();
-            string stationLong = station["station_long"].ToString();
+            var stationLat = station["station_lat"].ToString();
+            var stationLong = station["station_long"].ToString();
             
             int distanceToStation = await _azureMapsService.GetDistanceAsync(double.Parse(originLatitude), double.Parse(originLongitude), double.Parse(stationLat), double.Parse(stationLong), TravelMode.car);
             station["distanceToStation"] = distanceToStation;
