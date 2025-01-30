@@ -10,6 +10,9 @@ public class LotLocation
     public double longitude { get; set; }
     public string locationType { get; set; }
     public int? lot_price {  get; set; }
+    public string dist { get; set; }
+    public string desc { get; set; }
+    public string amenities { get; set; }
     public string TMEventId { get; set; }
 }
 
@@ -19,6 +22,8 @@ public class EnrichedLotLocation
     public string lot_long { get; set; }
     public string actual_lot { get; set; }
     public string location_type { get; set; }
-    public string distance_to_stadium_in_meters { get; set; }
+    public string distance_to_stadium { get; set; }
     public int? lot_price { get; set; }
+    public string description { get; set; }
+    public string amenities { get; set; }
 }

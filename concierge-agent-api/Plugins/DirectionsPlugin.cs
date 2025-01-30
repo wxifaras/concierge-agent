@@ -73,41 +73,51 @@ public class DirectionsPlugin
         [Description("Whether the customer is open to a short walk or not")] bool isOpenToShortWalk*/
         )
     {
-        _logger.LogInformation($"get_parking_options");
-        List<LotLocation> lotLocations = _memoryCache.Get<List<LotLocation>>($"LotLocations-{tmEventId}");
-        var enrichedJson = string.Empty;
+         _logger.LogInformation($"get_parking_options");
+         List<LotLocation> lotLocations = _memoryCache.Get<List<LotLocation>>($"LotLocations-{tmEventId}");
+         var enrichedJson = string.Empty;
 
-        if (lotLocations != null)
-        {
-            if (!_memoryCache.TryGetValue("EnrichedLotLocations", out List<EnrichedLotLocation> enrichedLotLocations))
-            {
-                enrichedLotLocations = new List<EnrichedLotLocation>();
-                // based on whether the customer is open to a short walk or not, which parking recommendations to provide
-                foreach (LotLocation lotLocation in lotLocations)
-                {
-                    int distanceToStadium = await _azureMapsService.GetDistanceAsync(lotLocation.lat, lotLocation.longitude, double.Parse(destinationLatitude), double.Parse(destinationLongitude), TravelMode.pedestrian);
+         if (lotLocations != null)
+         {
+             if (!_memoryCache.TryGetValue("EnrichedLotLocations", out List<EnrichedLotLocation> enrichedLotLocations))
+             {
+                 enrichedLotLocations = new List<EnrichedLotLocation>();
+                 // based on whether the customer is open to a short walk or not, which parking recommendations to provide
+                 foreach (LotLocation lotLocation in lotLocations)
+                 {
+                     var distanceToStadium = lotLocation.dist;
 
-                    var enrichedLotLocation = new EnrichedLotLocation
+                    // if the distance to the stadium for this lot is not in the database, get it from the map service. Note that the map service may
+                    // give a longer distance because it may take roads to get to the stadium even if it's located directly beside the stadium
+                    if (distanceToStadium == null)
                     {
-                        lot_lat = lotLocation.lat.ToString(),
-                        lot_long = lotLocation.longitude.ToString(),
-                        actual_lot = lotLocation.actual_lot,
-                        location_type = lotLocation.locationType,
-                        distance_to_stadium_in_meters = distanceToStadium.ToString(),
-                        lot_price = lotLocation.lot_price
-                    };
+                        int distance = await _azureMapsService.GetDistanceAsync(lotLocation.lat, lotLocation.longitude, double.Parse(destinationLatitude), double.Parse(destinationLongitude), TravelMode.pedestrian);
+                        distanceToStadium = distance.ToString();
+                    }
 
-                    enrichedLotLocations.Add(enrichedLotLocation);
-                }
+                     var enrichedLotLocation = new EnrichedLotLocation
+                     {
+                         lot_lat = lotLocation.lat.ToString(),
+                         lot_long = lotLocation.longitude.ToString(),
+                         actual_lot = lotLocation.actual_lot,
+                         location_type = lotLocation.locationType,
+                         distance_to_stadium_in_meters = distanceToStadium.ToString(),
+                         amenities = lotLocation.amenities,
+                         description = lotLocation.desc,
+                         lot_price = lotLocation.lot_price
+                     };
 
-                _memoryCache.Set("EnrichedLotLocations", enrichedLotLocations, TimeSpan.FromMinutes(120));
-            }
+                     enrichedLotLocations.Add(enrichedLotLocation);
+                 }
 
-            enrichedJson = JsonConvert.SerializeObject(enrichedLotLocations, Formatting.Indented);
-        }
-        
-        return enrichedJson;
-    }
+                 _memoryCache.Set("EnrichedLotLocations", enrichedLotLocations, TimeSpan.FromMinutes(120));
+             }
+
+     enrichedJson = JsonConvert.SerializeObject(enrichedLotLocations, Formatting.Indented);
+ }
+ 
+      return enrichedJson;
+}
 
     [KernelFunction("get_closest_marta_station")]
     [Description("Returns the closest MARTA station to the customers origin location")]
@@ -125,11 +135,10 @@ public class DirectionsPlugin
         // add the distance to each MARTA station from the customer's origin
         foreach (var station in stationList)
         {
-            var stationLat = (string)station["station_lat"];
-            var stationLong = (string)station["station_long"];
-
+            string stationLat = station["station_lat"].ToString();
+            string stationLong = station["station_long"].ToString();
+            
             int distanceToStation = await _azureMapsService.GetDistanceAsync(double.Parse(originLatitude), double.Parse(originLongitude), double.Parse(stationLat), double.Parse(stationLong), TravelMode.car);
-
             station["distanceToStation"] = distanceToStation;
         }
 
