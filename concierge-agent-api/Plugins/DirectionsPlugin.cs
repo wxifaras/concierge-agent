@@ -1,10 +1,8 @@
-﻿using Asp.Versioning.Conventions;
-using concierge_agent_api.Models;
+﻿using concierge_agent_api.Models;
 using concierge_agent_api.Services;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.SemanticKernel;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System.ComponentModel;
 
 namespace concierge_agent_api.Plugins;
@@ -38,8 +36,7 @@ public class DirectionsPlugin
         [Description("The address of the destination")] string destinationAddress,
         [Description("The latitude of the destination")] string destinationLatitude,
         [Description("The longitude of the destination")] string destinationLongitude,
-        [Description("The travel mode to the stadium")] TravelMode travelMode
-        )
+        [Description("The travel mode to the stadium")] TravelMode travelMode)
     {
         _logger.LogInformation($"get_distance_to_destination");
 
@@ -57,8 +54,7 @@ public class DirectionsPlugin
         [Description("The longitude of the origin")] string originLongitude,
         [Description("The address of the destination")] string destinationAddress,
         [Description("The latitude of the destination")] string destinationLatitude,
-        [Description("The longitude of destination")] string destinationLongitude
-        )
+        [Description("The longitude of destination")] string destinationLongitude)
     {
         _logger.LogInformation($"get_directions_to_destination");
 
@@ -79,32 +75,48 @@ public class DirectionsPlugin
     {
         _logger.LogInformation($"get_parking_options");
         List<LotLocation> lotLocations = _memoryCache.Get<List<LotLocation>>($"LotLocations-{tmEventId}");
+        var enrichedJson = string.Empty;
 
-        if (!_memoryCache.TryGetValue("EnrichedLotLocations", out List<EnrichedLotLocation> enrichedLotLocations))
+        if (lotLocations != null)
         {
-            enrichedLotLocations = new List<EnrichedLotLocation>();
-            // based on whether the customer is open to a short walk or not, which parking recommendations to provide
-            foreach (LotLocation lotLocation in lotLocations)
+            if (!_memoryCache.TryGetValue("EnrichedLotLocations", out List<EnrichedLotLocation> enrichedLotLocations))
             {
-                int distanceToStadium = await _azureMapsService.GetDistanceAsync(lotLocation.lat, lotLocation.longitude, double.Parse(destinationLatitude), double.Parse(destinationLongitude), TravelMode.pedestrian);
+                enrichedLotLocations = new List<EnrichedLotLocation>();
 
-                var enrichedLotLocation = new EnrichedLotLocation
+                // based on whether the customer is open to a short walk or not, which parking recommendations to provide
+                foreach (LotLocation lotLocation in lotLocations)
                 {
-                    lot_lat = lotLocation.lat.ToString(),
-                    lot_long = lotLocation.longitude.ToString(),
-                    actual_lot = lotLocation.actual_lot,
-                    location_type = lotLocation.locationType,
-                    distance_to_stadium_in_meters = distanceToStadium.ToString(),
-                    lot_price = lotLocation.lot_price
-                };
+                    var distanceToStadium = lotLocation.dist;
 
-                enrichedLotLocations.Add(enrichedLotLocation);
+                    // if the distance to the stadium for this lot is not in the database, get it from the map service. Note that the map service may
+                    // give a longer distance because it may take roads to get to the stadium even if it's located directly beside the stadium
+                    if (distanceToStadium == null)
+                    {
+                        int distance = await _azureMapsService.GetDistanceAsync(lotLocation.lat, lotLocation.longitude, double.Parse(destinationLatitude), double.Parse(destinationLongitude), TravelMode.pedestrian);
+                        distanceToStadium = distance.ToString();
+                    }
+
+                    var enrichedLotLocation = new EnrichedLotLocation
+                    {
+                        lot_lat = lotLocation.lat.ToString(),
+                        lot_long = lotLocation.longitude.ToString(),
+                        actual_lot = lotLocation.actual_lot,
+                        location_type = lotLocation.locationType,
+                        distance_to_stadium = distanceToStadium.ToString(),
+                        amenities = lotLocation.amenities,
+                        description = lotLocation.desc,
+                        lot_price = lotLocation.lot_price
+                    };
+
+                    enrichedLotLocations.Add(enrichedLotLocation);
+                }
+
+                _memoryCache.Set("EnrichedLotLocations", enrichedLotLocations, TimeSpan.FromMinutes(120));
             }
 
-            _memoryCache.Set("EnrichedLotLocations", enrichedLotLocations, TimeSpan.FromMinutes(120));
+            enrichedJson = JsonConvert.SerializeObject(enrichedLotLocations, Formatting.Indented);
         }
 
-        var enrichedJson = JsonConvert.SerializeObject(enrichedLotLocations, Formatting.Indented);
         return enrichedJson;
     }
 
@@ -115,8 +127,7 @@ public class DirectionsPlugin
         [Description("The address of the origin")] string originAddress,
         [Description("The latitude of the origin")] string originLatitude,
         [Description("The longitude of the origin")] string originLongitude,
-        [Description("JSON list of MARTA stations closest to the customer")] string jsonMartaStations
-        )
+        [Description("JSON list of MARTA stations closest to the customer")] string jsonMartaStations)
     {
         _logger.LogInformation($"get_closest_marta_station");
 
@@ -125,16 +136,28 @@ public class DirectionsPlugin
         // add the distance to each MARTA station from the customer's origin
         foreach (var station in stationList)
         {
-            string stationLat = (string)station["station_lat"];
-            string stationLong = (string)station["station_long"];
-
+            var stationLat = station["station_lat"].ToString();
+            var stationLong = station["station_long"].ToString();
+            
             int distanceToStation = await _azureMapsService.GetDistanceAsync(double.Parse(originLatitude), double.Parse(originLongitude), double.Parse(stationLat), double.Parse(stationLong), TravelMode.car);
-
             station["distanceToStation"] = distanceToStation;
         }
 
-        string strStationList = JsonConvert.SerializeObject(stationList, Formatting.Indented);
+        var strStationList = JsonConvert.SerializeObject(stationList, Formatting.Indented);
 
         return strStationList;
+    }
+
+    [KernelFunction("get_weather")]
+    [Description("Gets the current weather at a specified location")]
+    public async Task<string> GetClosestMartaStation(
+        [Description("The latitude of the specified location")] string latitude,
+        [Description("The longitude of the specified location")] string longitude)
+    {
+        _logger.LogInformation($"get_weather");
+
+        var weather = await _azureMapsService.GetWeatherAsync(double.Parse(latitude), double.Parse(longitude));
+
+        return weather;
     }
 }

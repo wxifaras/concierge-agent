@@ -16,7 +16,7 @@ public class EventsPlugin
         IOptions<AzureStorageOptions> options)
     {
         _logger = logger;
-        _connectionString = options.Value.StorageConnectionString;
+        _connectionString = options.Value.StorageConnectionString ?? throw new ArgumentNullException(nameof(options.Value.StorageConnectionString));
     }
 
     [KernelFunction("get_event_information")]
@@ -24,14 +24,23 @@ public class EventsPlugin
     public async Task<string> GetEventInfo(
     [Description("The TMEventId of the event.")] string tmEventId)
     {
-        _logger.LogInformation($"get_event_information");
+        _logger.LogInformation($"get_event_information for TMEventId {tmEventId}");
 
-        var blobServiceClient = new BlobServiceClient(_connectionString);
-        var containerClient = blobServiceClient.GetBlobContainerClient($"events/{tmEventId}");
-        var blobClient = containerClient.GetBlobClient($"{tmEventId}.txt");
+        var content = string.Empty;
 
-        var response = await blobClient.DownloadContentAsync();
-        var content = response.Value.Content.ToString();
+        try
+        {
+            var blobServiceClient = new BlobServiceClient(_connectionString);
+            var containerClient = blobServiceClient.GetBlobContainerClient($"events");
+            var blobClient = containerClient.GetBlobClient($"{tmEventId}/{tmEventId}.txt");
+
+            var response = await blobClient.DownloadContentAsync();
+            content = response.Value.Content.ToString();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error getting event information for TMEventId {tmEventId}");
+        }
 
         return content;
     }

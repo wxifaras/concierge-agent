@@ -24,6 +24,7 @@ namespace concierge_agent_api.Services
         Task<RouteSummary> GetDirectionsAsync(double startLatitude, double startLongitude, double endLatitude, double endLongitude, TravelMode travelMode);
         Task<int> GetDistanceAsync(double startLatitude, double startLongitude, double endLatitude, double endLongitude, TravelMode travelMode);
         Task<PointOfInterest> GetPointOfInterestAsync(string businessName, double latitude, double longitude, int radius);
+        Task<string> GetWeatherAsync(double latitude, double longitude);
     }
 
     public class AzureMapsService : IAzureMapsService
@@ -138,6 +139,17 @@ namespace concierge_agent_api.Services
             var pointofInterest = JsonConvert.DeserializeObject<PointOfInterest>(jsonString);
 
             return pointofInterest;
+        }
+
+        public async Task<string> GetWeatherAsync(double latitude, double longitude)
+        {
+            var query = $"https://atlas.microsoft.com/weather/currentConditions/json?api-version=1.1&query={latitude},{longitude}&details=true&subscription-key={_subscriptionKey}";
+
+            var response = await _client.GetAsync(query);
+            response.EnsureSuccessStatusCode();
+            var jsonString = await response.Content.ReadAsStringAsync();
+
+            return jsonString;
         }
     }
 }
