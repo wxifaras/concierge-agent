@@ -147,4 +147,17 @@ public class DirectionsPlugin
 
         return strStationList;
     }
+
+    [KernelFunction("get_weather")]
+    [Description("Gets the current weather at a specified location")]
+    public async Task<string> GetClosestMartaStation(
+        [Description("The latitude of the specified location")] string latitude,
+        [Description("The longitude of the specified location")] string longitude)
+    {
+        _logger.LogInformation($"get_weather");
+
+        var weather = await _azureMapsService.GetWeatherAsync(double.Parse(latitude), double.Parse(longitude));
+
+        return weather;
+    }
 }
