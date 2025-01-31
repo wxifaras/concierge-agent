@@ -72,30 +72,24 @@ public class AzureDatabricksService : IAzureDatabricksService
         var locationType = isLot ? "Lot" : "Gate";
 
         var query =
-            "SELECT " +
-            "STRUCT(" +
-            "  lot_location.actual_lot, " +
-            "  lot_location.lat, " +
-            "  lot_location.long, " +
-            "  lot_location.locationType, " +
-            "  event_lot_cost.lot_price, " +
-            "  lot_info.dist, " +
-            "  lot_info.desc, " +
-            "  lot_info.amenities, " +
-            "  event_lot_cost.TMEventId) AS combined_struct " +
-            "FROM " +
-            "ambse_prod_gold_catalog.parking.lot_location AS lot_location " +
-            "JOIN " +
-            "ambse_prod_gold_catalog.parking.event_lot_cost AS event_lot_cost " +
-            "ON " +
-            "lot_location.actual_lot = event_lot_cost.actual_lot " +
-            "JOIN " +
-            "ambse_prod_gold_catalog.parking.lot_info AS lot_info " +
-            "ON " +
-            "lot_location.actual_lot = lot_info.lotname " +
-            "WHERE " +
-            "lot_location.locationType = 'Lot' " +
-            "AND event_lot_cost.TMEventId = '" + tmEventId + "'";
+            "SELECT STRUCT( " +
+            "lot_location.actual_lot, " +
+            "lot_location.lat, " +
+            "lot_location.long, " +
+            "lot_location.locationType, " +
+            "event_lot_cost.lot_price, " +
+            "lot_info.dist, " +
+            "lot_info.desc, " +
+            "lot_info.amenities, " +
+            "event_lot_cost.TMEventId " +
+            ") AS combined_struct " +
+            "FROM ambse_prod_gold_catalog.parking.lot_location AS lot_location " +
+            "FULL OUTER JOIN ambse_prod_gold_catalog.parking.event_lot_cost AS event_lot_cost " +
+                "ON lot_location.actual_lot = event_lot_cost.actual_lot " +
+            "FULL OUTER JOIN ambse_prod_gold_catalog.parking.lot_info AS lot_info " +
+                "ON lot_location.actual_lot = lot_info.lotname " +
+            "WHERE lot_location.locationType = 'Lot' " +
+                 "AND event_lot_cost.TMEventId = '" + tmEventId + "'";
 
         var jsonString = await GetAsync(query);
         var lotLocations = JsonConvert.DeserializeObject<List<LotLocation>>(jsonString);
