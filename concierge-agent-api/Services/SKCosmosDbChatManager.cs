@@ -24,23 +24,47 @@ public class ChatMessageDto
     public string Content { get; set; }
 }
 
-public interface ICosmosDbChatHistoryManager
+public interface ISKCosmosDbChatManager
 {
     Task<ChatHistory> GetOrCreateChatHistoryAsync(string smsNumber, string tmEventId);
     Task SaveChatHistoryAsync(string smsNumber, string tmEventId, ChatHistory chatHistory);
-    Task<ChatHistory> RetrieveChatHistoryAsync(string smsNumber, string tmEventId);
 }
 
 /// <summary>
-/// The CosmosDbChatHistoryManager class is responsible for managing chat history in a Cosmos DB container.
+/// The SKCosmosDbChatManager class is responsible for managing chat history in a Cosmos DB container.
 /// Assumes a Hierarchical Partitioning scheme with the following partition key: /SmsNumber, /TmEventId
+/// Retrieves an existing chat history or creates a new one if it doesn't exist.
 /// </summary>
-public class CosmosDbChatHistoryManager : ICosmosDbChatHistoryManager
+/// <param name="smsNumber">The SMS number associated with the chat history.</param>
+/// <param name="tmEventId">The event ID associated with the chat history.</param>
+/// <returns>A ChatHistory object.</returns>
+/// <example>
+/// Sample usage:
+/// <code>
+/// // Retrieve or create chat history
+/// var chatHistory = await cosmosDbChatHistoryManager.GetOrCreateChatHistoryAsync(request.SmsNumber, request.TMEventId);
+/// 
+/// // Add a system message (if needed)
+/// chatHistory.AddSystemMessage($"TMEventId:{request.TMEventId}");
+/// 
+/// // Save the updated chat history
+/// await cosmosDbChatHistoryManager.SaveChatHistoryAsync(request.SmsNumber, request.TMEventId, chatHistory);
+/// 
+/// // Add user and assistant messages
+/// chatHistory.AddUserMessage("User's new message");
+/// chatHistory.AddAssistantMessage("Assistant's response");
+/// 
+/// // Save the chat history again after adding new messages
+/// await cosmosDbChatHistoryManager.SaveChatHistoryAsync(request.SmsNumber, request.TMEventId, chatHistory);
+/// 
+/// </code>
+/// </example>
+public class SKCosmosDbChatManager : ISKCosmosDbChatManager
 {
     private readonly Container _chatContainer;
     private readonly string _systemMessage;
 
-    public CosmosDbChatHistoryManager(IOptions<CosmosDbOptions> options, string systemMessage)
+    public SKCosmosDbChatManager(IOptions<CosmosDbOptions> options, string systemMessage)
     {
         CosmosClient cosmosClient = new(
            accountEndpoint: options.Value.AccountUri,
@@ -57,34 +81,11 @@ public class CosmosDbChatHistoryManager : ICosmosDbChatHistoryManager
     }
 
     /// <summary>
-    /// Retrieves an existing chat history or creates a new one if it doesn't exist.
+    /// Retrieves an existing chat history or creates a new one if it doesn't exist
     /// </summary>
-    /// <param name="smsNumber">The SMS number associated with the chat history.</param>
-    /// <param name="tmEventId">The event ID associated with the chat history.</param>
-    /// <returns>A ChatHistory object.</returns>
-    /// <example>
-    /// Sample usage:
-    /// <code>
-    /// // Retrieve or create chat history
-    /// var chatHistory = await cosmosDbChatHistoryManager.GetOrCreateChatHistoryAsync(request.SmsNumber, request.TMEventId);
-    /// 
-    /// // Add a system message (if needed)
-    /// chatHistory.AddSystemMessage($"TMEventId:{request.TMEventId}");
-    /// 
-    /// // Save the updated chat history
-    /// await cosmosDbChatHistoryManager.SaveChatHistoryAsync(request.SmsNumber, request.TMEventId, chatHistory);
-    /// 
-    /// // Add user and assistant messages
-    /// chatHistory.AddUserMessage("User's new message");
-    /// chatHistory.AddAssistantMessage("Assistant's response");
-    /// 
-    /// // Save the chat history again after adding new messages
-    /// await cosmosDbChatHistoryManager.SaveChatHistoryAsync(request.SmsNumber, request.TMEventId, chatHistory);
-    /// 
-    /// // Retrieve the chat history (if needed later)
-    /// chatHistory = await cosmosDbChatHistoryManager.RetrieveChatHistoryAsync(request.SmsNumber, request.TMEventId);
-    /// </code>
-    /// </example>
+    /// <param name="smsNumber"></param>
+    /// <param name="tmEventId"></param>
+    /// <returns>ChatHistory</returns>
     public async Task<ChatHistory> GetOrCreateChatHistoryAsync(string smsNumber, string tmEventId)
     {
         var partitionKey = GetPK(smsNumber, tmEventId);
@@ -202,62 +203,6 @@ public class CosmosDbChatHistoryManager : ICosmosDbChatHistoryManager
             existingItem.LastAccessed = DateTime.UtcNow;
 
             await _chatContainer.UpsertItemAsync(existingItem, partitionKey);
-        }
-        catch (CosmosException ex)
-        {
-            // Handle any Cosmos DB exceptions here
-            throw;
-        }
-    }
-
-    /// <summary>
-    /// Retrieves an existing chat history
-    /// </summary>
-    /// <param name="smsNumber"></param>
-    /// <param name="tmEventId"></param>
-    /// <returns></returns>
-    public async Task<ChatHistory> RetrieveChatHistoryAsync(string smsNumber, string tmEventId)
-    {
-        var partitionKey = GetPK(smsNumber, tmEventId);
-
-        try
-        {
-            var query = new QueryDefinition(
-                "SELECT * FROM c WHERE c.SmsNumber = @smsNumber AND c.TmEventId = @tmEventId")
-                .WithParameter("@smsNumber", smsNumber)
-                .WithParameter("@tmEventId", tmEventId);
-
-            using FeedIterator<ChatHistoryItem> feedIterator = _chatContainer.GetItemQueryIterator<ChatHistoryItem>(
-                query,
-                requestOptions: new QueryRequestOptions { PartitionKey = partitionKey }
-            );
-
-            if (feedIterator.HasMoreResults)
-            {
-                FeedResponse<ChatHistoryItem> response = await feedIterator.ReadNextAsync();
-                if (response.Any())
-                {
-                    var item = response.First();
-                    var chatHistory = new ChatHistory();
-                    foreach (var message in item.Messages)
-                    {
-                        var role = message.Role.ToLowerInvariant() switch
-                        {
-                            "system" => AuthorRole.System,
-                            "assistant" => AuthorRole.Assistant,
-                            "user" => AuthorRole.User,
-                            "tool" => AuthorRole.Tool,
-                            _ => new AuthorRole(message.Role),
-                        };
-
-                        chatHistory.AddMessage(role, message.Content);
-                    }
-
-                    return chatHistory;
-                }
-            }
-
-            return new ChatHistory();
         }
         catch (CosmosException ex)
         {
