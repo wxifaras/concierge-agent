@@ -4,6 +4,8 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.SemanticKernel;
 using Newtonsoft.Json;
 using System.ComponentModel;
+using System.Drawing.Text;
+using System.Text.RegularExpressions;
 
 namespace concierge_agent_api.Plugins;
 
@@ -28,7 +30,7 @@ public class DirectionsPlugin
 
     [KernelFunction("get_distance_to_destination")]
     [Description("Calculates the distance from the customer's origin to the specified destination")]
-    public async Task<int> GetDistanceToDestination(
+    public async Task<double> GetDistanceToDestination(
         [Description("The origin of where the customer will be driving from to the destination")] string origin,
         [Description("The address of the origin")] string originAddress,
         [Description("The latitude of the origin")] string originLatitude,
@@ -40,7 +42,7 @@ public class DirectionsPlugin
     {
         _logger.LogInformation($"get_distance_to_destination");
 
-        int distance = await _azureMapsService.GetDistanceAsync(Double.Parse(originLatitude), Double.Parse(originLongitude), Double.Parse(destinationLatitude), Double.Parse(destinationLongitude), travelMode);
+        double distance = await _azureMapsService.GetDistanceInMilesAsync(Double.Parse(originLatitude), Double.Parse(originLongitude), Double.Parse(destinationLatitude), Double.Parse(destinationLongitude), travelMode);
 
         return distance;
     }
@@ -92,7 +94,7 @@ public class DirectionsPlugin
                     // give a longer distance because it may take roads to get to the stadium even if it's located directly beside the stadium
                     if (distanceToStadium == null)
                     {
-                        int distance = await _azureMapsService.GetDistanceAsync(lotLocation.lat, lotLocation.longitude, double.Parse(destinationLatitude), double.Parse(destinationLongitude), TravelMode.pedestrian);
+                        double distance = await _azureMapsService.GetDistanceInMilesAsync(lotLocation.lat, lotLocation.longitude, double.Parse(destinationLatitude), double.Parse(destinationLongitude), TravelMode.pedestrian);
                         distanceToStadium = distance.ToString();
                     }
 
@@ -114,10 +116,33 @@ public class DirectionsPlugin
                 _memoryCache.Set("EnrichedLotLocations", enrichedLotLocations, TimeSpan.FromMinutes(120));
             }
 
-            enrichedJson = JsonConvert.SerializeObject(enrichedLotLocations, Formatting.Indented);
+            var sortedEnrichedLotLocations = enrichedLotLocations
+                .OrderBy(lot => ParseDistance(lot.distance_to_stadium))
+                .ToList();
+
+            enrichedJson = JsonConvert.SerializeObject(sortedEnrichedLotLocations, Formatting.Indented);
         }
 
         return enrichedJson;
+    }
+
+    /// <summary>
+    /// Parses the distance from a string, which wil be either a numerical value or a descriptive string.
+    /// </summary>
+    /// <param name="distance"></param>
+    /// <returns></returns>
+    private double ParseDistance(string distance)
+    {
+        // Check if the distance includes a description like "miles from stadium". All of the dist fields have this description,
+        // so this is dependent on the data
+        var match = Regex.Match(distance, @"([0-9.]+)\s*miles? from stadium", RegexOptions.IgnoreCase);
+        if (match.Success)
+        {
+            return double.Parse(match.Groups[1].Value); // Extract and return the numeric part
+        }
+
+        // If it's just a number, assume it's already in miles
+        return double.Parse(distance);
     }
 
     [KernelFunction("get_closest_marta_station")]
@@ -139,7 +164,7 @@ public class DirectionsPlugin
             var stationLat = station["station_lat"].ToString();
             var stationLong = station["station_long"].ToString();
             
-            int distanceToStation = await _azureMapsService.GetDistanceAsync(double.Parse(originLatitude), double.Parse(originLongitude), double.Parse(stationLat), double.Parse(stationLong), TravelMode.car);
+            double distanceToStation = await _azureMapsService.GetDistanceInMilesAsync(double.Parse(originLatitude), double.Parse(originLongitude), double.Parse(stationLat), double.Parse(stationLong), TravelMode.car);
             station["distanceToStation"] = distanceToStation;
         }
 

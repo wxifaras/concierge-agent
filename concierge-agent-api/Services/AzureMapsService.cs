@@ -22,7 +22,7 @@ namespace concierge_agent_api.Services
     {
         Task<StreetAddress> GetAddressAsync(double latitude, double longitude);
         Task<RouteSummary> GetDirectionsAsync(double startLatitude, double startLongitude, double endLatitude, double endLongitude, TravelMode travelMode);
-        Task<int> GetDistanceAsync(double startLatitude, double startLongitude, double endLatitude, double endLongitude, TravelMode travelMode);
+        Task<double> GetDistanceInMilesAsync(double startLatitude, double startLongitude, double endLatitude, double endLongitude, TravelMode travelMode);
         Task<PointOfInterest> GetPointOfInterestAsync(string businessName, double latitude, double longitude, int radius);
         Task<string> GetWeatherAsync(double latitude, double longitude);
     }
@@ -100,10 +100,10 @@ namespace concierge_agent_api.Services
             return routeSummary;
          }
 
-        //This method returns just the distance in meters. 
-        //https://learn.microsoft.com/en-us/rest/api/maps/route/get-route-directions?view=rest-maps-2024-04-01&tabs=HTTP#successfully-retrieve-a-route-between-an-origin-and-a-destination
-        //the json response is the same as GetDirectionsAsync. This method is just returning the LengthInMeters
-        public async Task<int> GetDistanceAsync(double startLatitude, double startLongitude, double endLatitude, double endLongitude, TravelMode travelMode)
+        // This method returns the distance in miles.
+        // https://learn.microsoft.com/en-us/rest/api/maps/route/get-route-directions?view=rest-maps-2024-04-01&tabs=HTTP#successfully-retrieve-a-route-between-an-origin-and-a-destination
+        // the json response is the same as GetDirectionsAsync. This method is just returning the LengthInMeters
+        public async Task<double> GetDistanceInMilesAsync(double startLatitude, double startLongitude, double endLatitude, double endLongitude, TravelMode travelMode)
         {
             var strTravelMode = travelMode.ToString().ToLower();
 
@@ -111,9 +111,14 @@ namespace concierge_agent_api.Services
             var response = await _client.GetAsync(query);
             response.EnsureSuccessStatusCode();
             var jsonString = await response.Content.ReadAsStringAsync();
-            var lengthInMeters = JsonConvert.DeserializeObject<RouteSummary>(jsonString);
+            var routeSummary = JsonConvert.DeserializeObject<RouteSummary>(jsonString);
 
-            return lengthInMeters.Routes[0].Summary.LengthInMeters;
+            // convert the distance from meters to miles
+            int distanceInMeters = routeSummary.Routes[0].Summary.LengthInMeters;
+
+            double distanceInMiles = distanceInMeters / 1609.34;
+
+            return distanceInMiles;
         }
 
         //Gets a point of interest- for example a business such as "Wild Leap"
