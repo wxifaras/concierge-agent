@@ -76,6 +76,7 @@ public class CorePrompts
     - Use details gathered from the data provided.
     - Only ask for clarification if the user's response is unclear or ambiguous.
     - Use details gathered from the provided data to fulfill the request. Do not add external information.
+    - Respond in a format suitable for SMS (short, clear, concise)
 
     ###       
     GUIDELINES: 
