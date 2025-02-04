@@ -90,10 +90,10 @@ builder.Services.AddSingleton<IChatHistoryManager>(sp =>
 });
 
 //var cosmosDbOptions = serviceProvider.GetRequiredService<IOptions<CosmosDbOptions>>();
-//ICosmosDbService cosmosDbService = new CosmosDbService(cosmosDbOptions);
 //builder.Services.AddSingleton<ICosmosDbChatHistoryManager>(sp =>
 //{
-//    return new CosmosDbChatHistoryManager(cosmosDbService);
+//    var sysPrompt = CorePrompts.GetSystemPrompt();
+//    return new CosmosDbChatHistoryManager(cosmosDbOptions, sysPrompt);
 //});
 
 builder.Services.AddHostedService<SmsQueueProcessor>();
