@@ -28,6 +28,21 @@ public class DirectionsPlugin
         _memoryCache = memoryCache;
     }
 
+    [KernelFunction("get_latitude_and_longitude")]
+    [Description("Gets the latitude and longitude from the specified address")]
+    public async Task<string> GetLatitudeAndLongitude(
+       [Description("The specified address")] string address)
+    {
+        _logger.LogInformation($"getlatitudeandlongitude");
+
+        LatLongLookUp latLongLookUp = await _azureMapsService.GetLatLongAsync(address);
+        var latitude = latLongLookUp.Results[0].EntryPoints[0].Position.Lat.ToString();
+        var longitude = latLongLookUp.Results[0].EntryPoints[0].Position.Lon.ToString();
+        var latLong = $"{latitude} {longitude}";
+
+        return latLong;
+    }
+
     [KernelFunction("get_distance_to_destination")]
     [Description("Calculates the distance from the customer's origin to the specified destination")]
     public async Task<double> GetDistanceToDestination(
