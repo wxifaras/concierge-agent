@@ -17,21 +17,15 @@ public class ConciergeAgentController : ControllerBase
 {
     private readonly ILogger<ConciergeAgentController> _logger;
     private readonly IAzureDatabricksService _azureDatabricksService;
-    private readonly Kernel _kernel;
-    private readonly IChatCompletionService _chat;
     private readonly IChatHistoryManager _chatHistoryManager;
     private readonly IMemoryCache _memoryCache;
 
     public ConciergeAgentController(
         ILogger<ConciergeAgentController> logger,
         IAzureDatabricksService azureDatabricksService,
-        Kernel kernel,
-        IChatCompletionService chat,
         IChatHistoryManager chathistorymanager,
         IMemoryCache memoryCache)
     {
-        _kernel = kernel;
-        _chat = chat;
         _chatHistoryManager = chathistorymanager;
         _logger = logger;
         _azureDatabricksService = azureDatabricksService;
@@ -64,19 +58,13 @@ public class ConciergeAgentController : ControllerBase
             var chatHistory = _chatHistoryManager.GetOrCreateChatHistory(request.SmsNumber);
 
             // check the event type so we know if this is a game, event, or a concert
-            string gameOrEventText = string.Empty;
-            switch (eventMaster.EventType.ToLower())
+            var gameOrEventText = string.Empty;
+            gameOrEventText = eventMaster.EventType.ToLower() switch
             {
-                case "mbs events":
-                    gameOrEventText = "event";
-                    break;
-                case "mbs concerts":
-                    gameOrEventText = "concert";
-                    break;
-                default:
-                    gameOrEventText = "game";
-                    break;
-            }
+                "mbs events" => "event",
+                "mbs concerts" => "concert",
+                _ => "game",
+            };
 
             var initialMessage = $"Hello {customer.FirstName}, We're excited to see you at the {eventMaster.TMEventNameLong} {gameOrEventText} on {eventMaster.EventDate}. Are you planning to drive, use rideshare, or take public transit?";
 
