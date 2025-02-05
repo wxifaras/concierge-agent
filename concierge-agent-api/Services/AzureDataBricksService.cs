@@ -103,6 +103,7 @@ public class AzureDatabricksService : IAzureDatabricksService
         var lotLookup = JsonConvert.DeserializeObject<List<LotLookup>>(jsonString);
         return lotLookup;
     }
+
     public async Task<List<LotEventPrice>> GetLotPriceByTMEventIdAsync(string tmEventId)
     {
         var query = $"SELECT STRUCT(*) FROM ambse_prod_gold_catalog.parking.event_lot_cost WHERE TMEventId = '{tmEventId}'";

@@ -59,7 +59,13 @@ var serviceProvider = builder.Services.BuildServiceProvider();
 
 var kernelOptions = serviceProvider.GetRequiredService<IOptions<AzureOpenAiOptions>>().Value;
 var databricksOptions = serviceProvider.GetRequiredService<IOptions<DatabricksOptions>>();
-IAzureDatabricksService azureDatabricksService = new AzureDatabricksService(databricksOptions);
+
+builder.Services.AddSingleton<IAzureDatabricksService>(sp =>
+{
+    var databricksOptions = sp.GetRequiredService<IOptions<DatabricksOptions>>();
+    return new AzureDatabricksService(databricksOptions);
+});
+
 var azureMapsOptions = serviceProvider.GetRequiredService<IOptions<AzureMapsOptions>>();
 IAzureMapsService azureMapsService = new AzureMapsService(azureMapsOptions);
 
@@ -71,6 +77,9 @@ builder.Services.AddTransient<Kernel>(s =>
     builder.AddAzureOpenAIChatCompletion(kernelOptions.DeploymentName, kernelOptions.EndPoint, kernelOptions.ApiKey);
     var directionsPluginLogger = s.GetRequiredService<ILogger<DirectionsPlugin>>();
     var memoryCache = s.GetRequiredService<IMemoryCache>();
+
+    var azureDatabricksService = s.GetRequiredService<IAzureDatabricksService>();
+
     var directionsPlugin = new DirectionsPlugin(directionsPluginLogger, azureDatabricksService, azureMapsService, memoryCache);
     builder.Plugins.AddFromObject(directionsPlugin, "DirectionsPlugin");
 
