@@ -20,6 +20,7 @@ namespace concierge_agent_api.Services
 
     public interface IAzureMapsService
     {
+        Task<LatLongLookUp> GetLatLongAsync(string address);
         Task<StreetAddress> GetAddressAsync(double latitude, double longitude);
         Task<RouteSummary> GetDirectionsAsync(double startLatitude, double startLongitude, double endLatitude, double endLongitude, TravelMode travelMode);
         Task<double> GetDistanceInMilesAsync(double startLatitude, double startLongitude, double endLatitude, double endLongitude, TravelMode travelMode);
@@ -40,6 +41,21 @@ namespace concierge_agent_api.Services
         public AzureMapsService(IOptions<AzureMapsOptions> options)
         {
             _subscriptionKey = options.Value.SubscriptionKey;
+        }
+
+        //Get the latitude and longitude coordinates when passed in a street address.
+        //https://learn.microsoft.com/en-us/rest/api/maps/search/get-search-address?view=rest-maps-1.0&tabs=HTTP
+
+        public async Task<LatLongLookUp> GetLatLongAsync(string address)
+        {
+            var encodedAddress = Uri.EscapeDataString(address);
+            var query = $"https://atlas.microsoft.com/search/address/json?api-version=1.0&query={encodedAddress}&subscription-key={_subscriptionKey}";
+            var response = await _client.GetAsync(query);
+            response.EnsureSuccessStatusCode();
+            var jsonString = await response.Content.ReadAsStringAsync();
+            var latLongLookup = JsonConvert.DeserializeObject<LatLongLookUp>(jsonString);
+
+            return latLongLookup;
         }
 
         //Get a street address and location info from latitude and longitude coordinates.

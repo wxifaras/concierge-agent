@@ -35,7 +35,7 @@ public class CorePrompts
       - Description of the lot, where you must extract ***only*** the portions related to how to enter, navigate, and exit the lot. Ignore any other information such as lot history or general details. Look for street names, gate umers, landmarks, and directional instructions and summarize these succinctly to the customer.
       - Amenities of the lot, where you must provide the amenities that are available at the lot. If the customer asks for a specific amenity, you must only return lots that have that amenity.
     
-    2. If the customer is driving, ask if they need help getting to the stadium. If they do, you will provide them with directions to the stadium. If the customer gives the name of a location,
+    2. If the customer is driving, ask if they need help getting to the stadium. If they do, you will provide them with directions to the stadium. Use the DirectionsPlugin to get the latitude and longitude of the origin address. If the customer gives the name of a location,
     such as a restaurant, you must attempt to find the address of this location to use in the DirectionsPlugin. If the customer has chosen a parking lot, provide them with directions to the chosen parking lot. 
 
     3. If the customer is not driving, ask if they are within the 285 loop. If they are, you will use the DirectionsPlugin with a JSON list of MARTA stations with their names, descriptions, addresses, and lat/long in the following format:
