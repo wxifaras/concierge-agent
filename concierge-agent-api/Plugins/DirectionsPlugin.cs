@@ -28,19 +28,39 @@ public class DirectionsPlugin
         _memoryCache = memoryCache;
     }
 
-    [KernelFunction("get_latitude_and_longitude")]
-    [Description("Gets the latitude and longitude from the specified address")]
+    [KernelFunction("get_latitude_and_longitude_and_address")]
+    [Description("Gets the latitude, longitude, and new address from the specified origin")]
     public async Task<string> GetLatitudeAndLongitude(
-       [Description("The specified address")] string address)
+         [Description("The origin of where the customer will be coming from")] string origin,
+         [Description("The current address of the origin")] string originAddress,
+         [Description("A flag to determine if the origin a business or not")] bool originFlag)
     {
         _logger.LogInformation($"getlatitudeandlongitude");
 
-        LatLongLookUp latLongLookUp = await _azureMapsService.GetLatLongAsync(address);
-        var latitude = latLongLookUp.Results[0].EntryPoints[0].Position.Lat.ToString();
-        var longitude = latLongLookUp.Results[0].EntryPoints[0].Position.Lon.ToString();
-        var latLong = $"{latitude} {longitude}";
+        string latitude= String.Empty;
+        string longitude= String.Empty;
+        string originMapsAddress= String.Empty; 
+        //right now we are just returning the 1st returned result from Azure Maps. Would want to check that the correct business is found.
+        //Would want to do the same for address. 
+        //radius is set to 40miles from stadium
+        if (originFlag)
+        {
+            PointOfInterest pointOfInterest = await _azureMapsService.GetPointOfInterestAsync(origin, 33.75528, -84.40083, 64374);
+            latitude = pointOfInterest.Results[0].Position.Lat.ToString();
+            longitude = pointOfInterest.Results[0].Position.Lon.ToString();
+            originMapsAddress = pointOfInterest.Results[0].Address.FreeformAddress.ToString();  
+        }
+        else
+        {
+            LatLongLookUp latLongLookUp = await _azureMapsService.GetLatLongAsync(origin);
+            latitude = latLongLookUp.Results[0].Position.Lat.ToString();
+            longitude = latLongLookUp.Results[0].Position.Lon.ToString();
+            originMapsAddress = latLongLookUp.Results[0].Address.FreeformAddress.ToString();
+        }
 
-        return latLong;
+        var mapsaddressLatLong = $"{originMapsAddress} {latitude} {longitude}";
+
+        return mapsaddressLatLong;
     }
 
     [KernelFunction("get_distance_to_destination")]
