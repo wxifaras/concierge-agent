@@ -111,7 +111,7 @@ namespace concierge_agent_api.Services
             var jsonString = await response.Content.ReadAsStringAsync();
             var routeSummary = JsonConvert.DeserializeObject<RouteSummary>(jsonString);
 
-            routeSummary.mapLink = $"https://www.bing.com/maps?rtp=~pos.{startLatitude}_{startLongitude}~pos.{endLatitude}_{endLongitude}";
+            routeSummary.mapLink = $"https://www.bing.com/maps?rtp=pos.{startLatitude}_{startLongitude}~pos.{endLatitude}_{endLongitude}";
 
             return routeSummary;
          }
